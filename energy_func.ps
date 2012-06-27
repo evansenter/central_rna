@@ -1,0 +1,4919 @@
+%!PS-Adobe-3.0
+%%Title: energy_func.c
+%%For: Vinodh Mechery
+%%Creator: a2ps version 4.13
+%%CreationDate: Tue Jun 12 17:03:11 2012
+%%BoundingBox: 24 24 588 768
+%%DocumentData: Clean7Bit
+%%Orientation: Portrait
+%%Pages: 10
+%%PageOrder: Ascend
+%%DocumentMedia: Letter 612 792 0 () ()
+%%DocumentNeededResources: font Courier
+%%+ font Courier-Bold
+%%+ font Courier-BoldOblique
+%%+ font Courier-Oblique
+%%+ font Helvetica
+%%+ font Helvetica-Bold
+%%+ font Symbol
+%%+ font Times-Bold
+%%+ font Times-Roman
+%%DocumentProcessColors: Black 
+%%DocumentSuppliedResources: procset a2ps-a2ps-hdr
+%%+ procset a2ps-black+white-Prolog
+%%+ encoding ISO-8859-1Encoding
+%%EndComments
+/a2psdict 200 dict def
+a2psdict begin
+%%BeginProlog
+%%Copyright: (c) 1988, 89, 90, 91, 92, 93 Miguel Santana
+%%Copyright: (c) 1995, 96, 97, 98 Akim Demaille, Miguel Santana
+% Check PostScript language level.
+/languagelevel where {
+  pop /gs_languagelevel languagelevel def
+} {
+  /gs_languagelevel 1 def
+} ifelse
+
+% EPSF import as in the Red Book
+/BeginInclude {
+  /b4_Inc_state save def    		% Save state for cleanup
+  /dict_count countdictstack def	% Count objects on dict stack
+  /op_count count 1 sub def		% Count objects on operand stack 
+  userdict begin
+    0 setgray 0 setlinecap
+    1 setlinewidth 0 setlinejoin
+    10 setmiterlimit [ ] 0 setdash newpath
+    gs_languagelevel 1 ne {
+      false setstrokeadjust false setoverprint 
+    } if
+} bind def
+
+/EndInclude {
+  count op_count sub { pos } repeat	% Clean up stacks
+  countdictstack dict_count sub { end } repeat
+  b4_Inc_state restore
+} bind def
+
+/BeginEPSF {
+  BeginInclude
+  /showpage { } def
+} bind def
+
+/EndEPSF {
+  EndInclude
+} bind def
+
+% Page prefeed
+/page_prefeed {         % bool -> -
+  statusdict /prefeed known {
+    statusdict exch /prefeed exch put
+  } {
+    pop
+  } ifelse
+} bind def
+
+/deffont {
+  findfont exch scalefont def
+} bind def
+
+/reencode_font {
+  findfont reencode 2 copy definefont pop def
+} bind def
+
+% Function c-show (str => -)
+% centers text only according to x axis.
+/c-show { 
+  dup stringwidth pop
+  2 div neg 0 rmoveto
+  show
+} bind def
+
+% Function l-show (str => -)
+% prints texts so that it ends at currentpoint
+/l-show {
+  dup stringwidth pop neg 
+  0 
+  rmoveto show
+} bind def
+
+% center-fit show (str w => -)
+% show centered, and scale currentfont so that the width is less than w
+/cfshow {
+  exch dup stringwidth pop
+  % If the title is too big, try to make it smaller
+  3 2 roll 2 copy
+  gt
+  { % if, i.e. too big
+    exch div
+    currentfont exch scalefont setfont
+  } { % ifelse
+    pop pop 
+  }
+  ifelse
+  c-show			% center title
+} bind def
+
+% Return the y size of the current font
+% - => fontsize
+/currentfontsize {
+  currentfont /FontType get 0 eq {
+    currentfont /FontMatrix get 3 get
+  }{
+    currentfont /FontMatrix get 3 get 1000 mul
+  } ifelse
+} bind def
+
+% reencode the font
+% <encoding-vector> <fontdict> -> <newfontdict>
+/reencode { %def
+  dup length 5 add dict begin
+    { %forall
+      1 index /FID ne 
+      { def }{ pop pop } ifelse
+    } forall
+    /Encoding exch def
+
+    % Use the font's bounding box to determine the ascent, descent,
+    % and overall height; don't forget that these values have to be
+    % transformed using the font's matrix.
+    % We use `load' because sometimes BBox is executable, sometimes not.
+    % Since we need 4 numbers an not an array avoid BBox from being executed
+    /FontBBox load aload pop
+    FontMatrix transform /Ascent exch def pop
+    FontMatrix transform /Descent exch def pop
+    /FontHeight Ascent Descent sub def
+
+    % Define these in case they're not in the FontInfo (also, here
+    % they're easier to get to.
+    /UnderlinePosition 1 def
+    /UnderlineThickness 1 def
+    
+    % Get the underline position and thickness if they're defined.
+    currentdict /FontInfo known {
+      FontInfo
+      
+      dup /UnderlinePosition known {
+	dup /UnderlinePosition get
+	0 exch FontMatrix transform exch pop
+	/UnderlinePosition exch def
+      } if
+      
+      dup /UnderlineThickness known {
+	/UnderlineThickness get
+	0 exch FontMatrix transform exch pop
+	/UnderlineThickness exch def
+      } if
+      
+    } if
+    currentdict 
+  end 
+} bind def
+
+% composite fonts for ASCII-EUC mixed string
+% Version 1.2 1/31/1990
+% Orignal Ken'ichi HANDA (handa@etl.go.jp)
+% Modified Norio Katayama (katayama@rd.nacsis.ac.jp),1998
+% Extend & Fix Koji Nakamaru (maru@on.cs.keio.ac.jp), 1999
+% Anyone can freely copy, modify, distribute this program.
+
+/copyfont {	% font-dic extra-entry-count  copyfont  font-dic
+	1 index maxlength add dict begin
+	{	1 index /FID ne 2 index /UniqueID ne and
+		{def} {pop pop} ifelse
+	} forall
+	currentdict
+	end
+} bind def
+
+/compositefont { % ASCIIFontName EUCFontName RomanScale RomanOffset Rot(T/F) compositefont font
+    /RomanRotation exch def
+    /RomanOffset exch def
+    /RomanScale exch def
+    userdict /fixeucfont_dict known not {
+	userdict begin
+	    /fixeucfont_dict 2 dict begin
+		/UpperByteEncoding [
+		    16#00 1 16#20 { pop 0 } for
+		    16#21 1 16#28 { 16#20 sub } for
+		    16#29 1 16#2F { pop 0 } for
+		    16#30 1 16#74 { 16#27 sub } for
+		    16#75 1 16#FF { pop 0 } for
+		] def
+	        /LowerByteEncoding [
+		    16#00 1 16#A0 { pop /.notdef } for
+		    16#A1 1 16#FE { 16#80 sub 16 2 string cvrs
+				    (cXX) dup 1 4 -1 roll
+				    putinterval cvn } for
+		    /.notdef
+		] def
+		currentdict
+	    end def
+	end
+    } if
+    findfont dup /FontType get 0 eq {
+	14 dict begin
+	    %
+	    % 7+8 bit EUC font
+	    %
+	    12 dict begin
+		/EUCFont exch def
+		/FontInfo (7+8 bit EUC font) readonly def
+		/PaintType 0 def
+		/FontType 0 def
+		/FontMatrix matrix def
+		% /FontName
+		/Encoding fixeucfont_dict /UpperByteEncoding get def
+		/FMapType 2 def
+		EUCFont /WMode known
+		{ EUCFont /WMode get /WMode exch def }
+		{ /WMode 0 def } ifelse
+		/FDepVector [
+		    EUCFont /FDepVector get 0 get
+		    [ 16#21 1 16#28 {} for 16#30 1 16#74 {} for ]
+		    {
+			13 dict begin
+			    /EUCFont EUCFont def
+			    /UpperByte exch 16#80 add def	
+			    % /FontName
+			    /FontInfo (EUC lower byte font) readonly def
+			    /PaintType 0 def
+			    /FontType 3 def
+			    /FontMatrix matrix def
+			    /FontBBox {0 0 0 0} def
+			    /Encoding
+				fixeucfont_dict /LowerByteEncoding get def
+			    % /UniqueID
+			    % /WMode
+			    /BuildChar {
+				gsave
+				exch dup /EUCFont get setfont
+				/UpperByte get
+				2 string
+				dup 0 4 -1 roll put
+				dup 1 4 -1 roll put
+				dup stringwidth setcharwidth
+				0 0 moveto show
+				grestore
+			    } bind def
+			    currentdict
+			end
+			/lowerbytefont exch definefont
+		    } forall
+		] def
+		currentdict
+	    end
+	    /eucfont exch definefont
+	    exch
+	    findfont 1 copyfont dup begin
+		RomanRotation {
+			/FontMatrix FontMatrix
+			[ 0 RomanScale neg RomanScale 0 RomanOffset neg 0 ]
+			matrix concatmatrix def
+		}{
+			/FontMatrix FontMatrix
+			[ RomanScale 0 0 RomanScale 0 RomanOffset ] matrix concatmatrix
+			def
+			/CDevProc
+			    {pop pop pop pop 0 exch -1000 exch 2 div 880} def
+		} ifelse
+	    end
+	    /asciifont exch definefont
+	    exch
+	    /FDepVector [ 4 2 roll ] def
+	    /FontType 0 def
+	    /WMode 0 def
+	    /FMapType 4 def
+	    /FontMatrix matrix def
+	    /Encoding [0 1] def
+	    /FontBBox {0 0 0 0} def
+%	    /FontHeight 1.0 def % XXXX
+	    /FontHeight RomanScale 1.0 ge { RomanScale }{ 1.0 } ifelse def
+	    /Descent -0.3 def   % XXXX
+	    currentdict
+	end
+	/tmpfont exch definefont
+	pop
+	/tmpfont findfont
+    }{
+	pop findfont 0 copyfont
+    } ifelse
+} def	
+
+/slantfont {	% FontName slant-degree  slantfont  font'
+    exch findfont 1 copyfont begin
+    [ 1 0 4 -1 roll 1 0 0 ] FontMatrix exch matrix concatmatrix
+    /FontMatrix exch def
+    currentdict
+    end
+} def
+
+% Function print line number (<string> # -)
+/# {
+  gsave
+    sx cw mul neg 2 div 0 rmoveto
+    f# setfont
+    c-show
+  grestore
+} bind def
+
+% -------- Some routines to enlight plain b/w printings ---------
+
+% Underline
+% width --
+/dounderline {
+  currentpoint
+  gsave
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    0 rlineto
+    stroke
+  grestore
+} bind def
+
+% Underline a string
+% string --
+/dounderlinestring {
+  stringwidth pop
+  dounderline
+} bind def
+
+/UL {
+  /ul exch store
+} bind def
+
+% Draw a box of WIDTH wrt current font
+% width --
+/dobox {
+  currentpoint
+  gsave
+    newpath
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    dup 0 rlineto
+    0 currentfont /FontHeight get currentfontsize mul rlineto
+    neg 0 rlineto
+    closepath
+    stroke
+  grestore
+} bind def
+
+/BX {
+  /bx exch store
+} bind def
+
+% Box a string
+% string --
+/doboxstring {
+  stringwidth pop
+  dobox
+} bind def
+
+%
+% ------------- Color routines ---------------
+%
+/FG /setrgbcolor load def
+
+% Draw the background
+% width --
+/dobackground {
+  currentpoint
+  gsave
+    newpath
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    dup 0 rlineto
+    0 currentfont /FontHeight get currentfontsize mul rlineto
+    neg 0 rlineto
+    closepath
+    bgcolor aload pop setrgbcolor
+    fill
+  grestore
+} bind def
+
+% Draw bg for a string
+% string --
+/dobackgroundstring {
+  stringwidth pop
+  dobackground
+} bind def
+
+
+/BG {
+  dup /bg exch store
+  { mark 4 1 roll ] /bgcolor exch store } if
+} bind def
+
+
+/Show {
+  bg { dup dobackgroundstring } if
+  ul { dup dounderlinestring } if
+  bx { dup doboxstring } if
+  show
+} bind def
+
+% Function T(ab), jumps to the n-th tabulation in the current line
+/T {
+  cw mul x0 add
+  bg { dup currentpoint pop sub dobackground } if
+  ul { dup currentpoint pop sub dounderline } if
+  bx { dup currentpoint pop sub dobox } if
+  y0 moveto
+} bind def
+
+% Function n: move to the next line
+/n {
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+% Function N: show and move to the next line
+/N {
+  Show
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+/S {
+  Show
+} bind def
+
+%%BeginResource: procset a2ps-a2ps-hdr 2.0 2
+%%Copyright: (c) 1988, 89, 90, 91, 92, 93 Miguel Santana
+%%Copyright: (c) 1995, 96, 97, 98 Akim Demaille, Miguel Santana
+% Function title: prints page header.
+% <ct> <rt> <lt> are passed as argument
+/title { 
+  % 1. Draw the background
+  x v get y v get moveto
+  gsave
+    0 th 2 div neg rmoveto 
+    th setlinewidth
+    0.95 setgray
+    pw 0 rlineto stroke
+  grestore
+  % 2. Border it
+  gsave
+    0.7 setlinewidth
+    pw 0 rlineto
+    0 th neg rlineto
+    pw neg 0 rlineto
+    closepath stroke
+  grestore
+  % stk: ct rt lt
+  x v get y v get th sub 1 add moveto
+%%IncludeResource: font Helvetica
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  % 3. The left title
+  gsave
+    dup stringwidth pop fnfs 0.8 mul add exch % leave space took on stack
+    fnfs 0.8 mul hm rmoveto
+    show			% left title
+  grestore
+  exch
+  % stk: ct ltw rt
+  % 4. the right title
+  gsave
+    dup stringwidth pop fnfs 0.8 mul add exch % leave space took on stack
+    dup
+    pw exch stringwidth pop fnfs 0.8 mul add sub
+    hm
+    rmoveto
+    show			% right title
+  grestore
+  % stk: ct ltw rtw
+  % 5. the center title
+  gsave
+    pw 3 1 roll
+    % stk: ct pw ltw rtw
+    3 copy 
+    % Move to the center of the left room
+    sub add 2 div hm rmoveto
+    % What is the available space in here?
+    add sub fnfs 0.8 mul sub fnfs 0.8 mul sub
+    % stk: ct space_left
+%%IncludeResource: font Helvetica-Bold
+  fHelvetica-Bold fnfs scalefont setfont
+    cfshow
+  grestore
+} bind def
+
+% Function border: prints virtual page border
+/border { %def
+  gsave				% print four sides
+    0 setgray
+    x v get y v get moveto
+    0.7 setlinewidth		% of the square
+    pw 0 rlineto
+    0 ph neg rlineto
+    pw neg 0 rlineto
+    closepath stroke
+  grestore
+} bind def
+
+% Function water: prints a water mark in background
+/water { %def
+  gsave
+    scx scy moveto rotate
+%%IncludeResource: font Times-Bold
+  fTimes-Bold 100 scalefont setfont
+    .97 setgray
+    dup stringwidth pop 2 div neg -50 rmoveto
+    show
+  grestore
+} bind def
+
+% Function rhead: prints the right header
+/rhead {  %def
+  lx ly moveto
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  l-show
+} bind def
+
+% Function footer (cf rf lf -> -)
+/footer {
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  dx dy moveto
+  show
+
+  snx sny moveto
+  l-show
+  
+  fnx fny moveto
+  c-show
+} bind def
+%%EndResource
+%%BeginResource: procset a2ps-black+white-Prolog 2.0 1
+
+% Function T(ab), jumps to the n-th tabulation in the current line
+/T { 
+  cw mul x0 add y0 moveto
+} bind def
+
+% Function n: move to the next line
+/n { %def
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+% Function N: show and move to the next line
+/N {
+  Show
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+}  bind def
+
+/S {
+  Show
+} bind def
+
+/p {
+  false UL
+  false BX
+  fCourier bfs scalefont setfont
+  Show
+} bind def
+
+/sy {
+  false UL
+  false BX
+  fSymbol bfs scalefont setfont
+  Show
+} bind def
+
+/k {
+  false UL
+  false BX
+  fCourier-Oblique bfs scalefont setfont
+  Show
+} bind def
+
+/K {
+  false UL
+  false BX
+  fCourier-Bold bfs scalefont setfont
+  Show
+} bind def
+
+/c {
+  false UL
+  false BX
+  fCourier-Oblique bfs scalefont setfont
+  Show
+} bind def
+
+/C {
+  false UL
+  false BX
+  fCourier-BoldOblique bfs scalefont setfont
+  Show 
+} bind def
+
+/l {
+  false UL
+  false BX
+  fHelvetica bfs scalefont setfont
+  Show
+} bind def
+
+/L {
+  false UL
+  false BX
+  fHelvetica-Bold bfs scalefont setfont
+  Show 
+} bind def
+
+/str{
+  false UL
+  false BX
+  fTimes-Roman bfs scalefont setfont
+  Show
+} bind def
+
+/e{
+  false UL
+  true BX
+  fHelvetica-Bold bfs scalefont setfont
+  Show
+} bind def
+
+%%EndResource
+%%EndProlog
+%%BeginSetup
+%%IncludeResource: font Courier
+%%IncludeResource: font Courier-Oblique
+%%IncludeResource: font Courier-Bold
+%%IncludeResource: font Times-Roman
+%%IncludeResource: font Symbol
+%%IncludeResource: font Courier-BoldOblique
+%%BeginResource: encoding ISO-8859-1Encoding
+/ISO-8859-1Encoding [
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/space /exclam /quotedbl /numbersign /dollar /percent /ampersand /quoteright 
+/parenleft /parenright /asterisk /plus /comma /minus /period /slash 
+/zero /one /two /three /four /five /six /seven 
+/eight /nine /colon /semicolon /less /equal /greater /question 
+/at /A /B /C /D /E /F /G 
+/H /I /J /K /L /M /N /O 
+/P /Q /R /S /T /U /V /W 
+/X /Y /Z /bracketleft /backslash /bracketright /asciicircum /underscore 
+/quoteleft /a /b /c /d /e /f /g 
+/h /i /j /k /l /m /n /o 
+/p /q /r /s /t /u /v /w 
+/x /y /z /braceleft /bar /braceright /asciitilde /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/space /exclamdown /cent /sterling /currency /yen /brokenbar /section 
+/dieresis /copyright /ordfeminine /guillemotleft /logicalnot /hyphen /registered /macron 
+/degree /plusminus /twosuperior /threesuperior /acute /mu /paragraph /bullet 
+/cedilla /onesuperior /ordmasculine /guillemotright /onequarter /onehalf /threequarters /questiondown 
+/Agrave /Aacute /Acircumflex /Atilde /Adieresis /Aring /AE /Ccedilla 
+/Egrave /Eacute /Ecircumflex /Edieresis /Igrave /Iacute /Icircumflex /Idieresis 
+/Eth /Ntilde /Ograve /Oacute /Ocircumflex /Otilde /Odieresis /multiply 
+/Oslash /Ugrave /Uacute /Ucircumflex /Udieresis /Yacute /Thorn /germandbls 
+/agrave /aacute /acircumflex /atilde /adieresis /aring /ae /ccedilla 
+/egrave /eacute /ecircumflex /edieresis /igrave /iacute /icircumflex /idieresis 
+/eth /ntilde /ograve /oacute /ocircumflex /otilde /odieresis /divide 
+/oslash /ugrave /uacute /ucircumflex /udieresis /yacute /thorn /ydieresis 
+] def
+%%EndResource
+% Initialize page description variables.
+/sh 792 def
+/sw 612 def
+/llx 24 def
+/urx 588 def
+/ury 768 def
+/lly 24 def
+/#copies 1 def
+/th 15.000000 def
+/fnfs 11 def
+/bfs 5.651106 def
+/cw 3.390664 def
+
+% Dictionary for ISO-8859-1 support
+/iso1dict 8 dict begin
+  /fCourier ISO-8859-1Encoding /Courier reencode_font
+  /fCourier-Bold ISO-8859-1Encoding /Courier-Bold reencode_font
+  /fCourier-BoldOblique ISO-8859-1Encoding /Courier-BoldOblique reencode_font
+  /fCourier-Oblique ISO-8859-1Encoding /Courier-Oblique reencode_font
+  /fHelvetica ISO-8859-1Encoding /Helvetica reencode_font
+  /fHelvetica-Bold ISO-8859-1Encoding /Helvetica-Bold reencode_font
+  /fTimes-Bold ISO-8859-1Encoding /Times-Bold reencode_font
+  /fTimes-Roman ISO-8859-1Encoding /Times-Roman reencode_font
+currentdict end def
+/bgcolor [ 0 0 0 ] def
+/bg false def
+/ul false def
+/bx false def
+% The font for line numbering
+/f# /Helvetica findfont bfs .6 mul scalefont def
+/fSymbol /Symbol findfont def
+/hm fnfs 0.25 mul def
+/pw
+   cw 81.400000 mul
+def
+/ph
+   337.371021 th add
+def
+/pmw urx llx sub pw 2 mul sub 1 div def
+/pmh ury lly sub ph 2 mul sub 24 sub 1 div def
+/v 0 def
+/x [
+  0
+  dup pmw add pw add
+  0
+  dup pmw add pw add
+] def
+/y [
+  pmh ph add 1 mul ph add
+  dup
+  pmh ph add 0 mul ph add
+  dup
+] def
+/scx sw 2 div def
+/scy sh 2 div def
+/snx urx def
+/sny lly 2 add def
+/dx llx def
+/dy sny def
+/fnx scx def
+/fny dy def
+/lx snx def
+/ly ury fnfs 0.8 mul sub def
+/sx 0 def
+/tab 8 def
+/x0 0 def
+/y0 0 def
+%%EndSetup
+
+%%Page: (1-4) 1
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(#include) K
+(<stdio.h>) p n
+(#include) K
+(<string.h>) p n
+(#include) K
+(<stdlib.h>) p n
+(#include) K
+(<math.h>) p n
+(#include) K
+(") p
+(energy_par.h) str
+(") p n
+(#include) K
+(") p
+(energy_func.h) str
+(") p n
+(#include) K
+(") p
+(enthalpy_par.h) str
+(") p n
+(#include) K
+(") p
+(energy_constant.h) str
+(") p n
+(DEBUG = 0;) N
+(/* Energy functions according to Matthews Rules located at) c n
+(   http://rna.urmc.rochester.edu/NNDB/) N
+() N
+(*/) N
+() p n
+(/* GetTripletEnergy) c n
+() N
+(   Input:) N
+(   1\) position of i) N
+(   2\) position of j closing i) N
+(   3\) position of k) N
+(   4\) position of l closing k) N
+(   5\) position of u) N
+(   6\) position of v closing u) N
+(   7\) sequence of integers representing nucleotides in original input sequence) N
+() N
+(   output:) N
+(   1\) corresponding triplet energy) N
+() N
+() N
+(   triplet is modeled as follows:) N
+(   3'  5') N
+(     uv) N
+(     kl) N
+(     ij) N
+(   5'  3' ) N
+(*/) N
+() p n
+(double) k
+( GetTripletEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( u, ) p
+(int) k
+( v, ) p
+(int) k
+( * trans_se) p n
+(q\)) N
+({ ) N
+(  ) S
+(int) k
+( ij_trans_index, kl_trans_index, uv_trans_index, ij_stack_index, kl_stack_i) p n
+(ndex, ijkl_stack_index, uv_stack_index;) N
+(  ) S
+(double) k
+( energy; ) p n
+(  ) N
+(  ) S
+(// ij_trans_index and kl_trans_index provide the indices to look up within d1 ) c n
+(that correspond to ij and kl ) N
+(  ) p n
+(  ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) S
+(// ij_trans_index corresp) c n
+(onds to the index location of ij in d1 ) N
+(  kl_trans_index = GetIndex\(trans_seq[k],trans_seq[l]\);) p
+(// kl_trans_index corresp) c n
+(onds to the index location of kl in d1 ) N
+(  uv_trans_index = GetIndex\(trans_seq[u],trans_seq[v]\);) p
+(// uv_trans_index corresp) c n
+(onds to the index location of uv in d1) N
+(  ) p n
+(  ) S
+(// ij_stack_index and kl_stack_index provide the indices ij\(row\) and kl\(column) c n
+(\) in stack37) N
+(  ) p n
+(  ij_stack_index = d1[ij_trans_index];) S
+(// ij_stack_index is the index of ij in en) c n
+(ergy tables located in energy_par.c) N
+(energy_func.c) (Page 1/38) (Jun 12, 12 14:51) title
+border
+/v 1 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(  kl_stack_index = d1[kl_trans_index];) p
+(// kl_stack_index is the index of kl in en) c n
+(ergy tables located in energy_par.c) N
+(  ijkl_stack_index = ij_stack_index*16 + kl_stack_index; ) p
+(// ijkl_stack_index is ) c n
+(the index of ijkl located in row of triplet37 in energy_par.c) N
+(  uv_stack_index = d1[uv_trans_index];) p
+(// uv_stack_index is the index of uv locat) c n
+(ed in column of triplet37 in energy_par.c) N
+() p n
+(  energy = triplet[ijkl_stack_index][uv_stack_index];) S
+(// energy value is assigned) c n
+( as the one at the intersect of ijkl_stack_index\(row\) and uv_stack_index\(column\)) N
+( in triplet37 in energy_par.c) N
+() p n
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Triplet: \(%d,%d\) %c%c; \(%d,%d\) %c%c: %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),GetNucl\() p n
+(trans_seq[j]\),k,l,GetNucl\(trans_seq[k]\),GetNucl\(trans_seq[l]\),energy\);) N
+(  }) N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(/* GetStackEnergy) c n
+() N
+(   Input:) N
+(   1\) position of i) N
+(   2\) position of j closing i) N
+(   3\) position of k) N
+(   4\) position of l closing k) N
+(   5\) sequence of integers representing nucleotides in original input sequence) N
+() N
+(   output:) N
+(   1\) corresponding stacking energy) N
+() N
+() N
+(   stacking is modeled as follows:) N
+(   3'  5') N
+(     kl) N
+(     ij) N
+(   5'  3' ) N
+(*/) N
+(double) k
+( GetStackEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\)) p n
+({) N
+(  ) S
+(int) k
+( ij_trans_index, kl_trans_index, ij_stack_index, kl_stack_index;) p n
+(  ) S
+(double) k
+( energy;) p n
+() N
+(  ) S
+(// ij_trans_index and kl_trans_index provide the indices to look up within d1 ) c n
+(that correspond to ij and kl ) N
+(  ) p n
+(  ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) S
+(// ij_trans_index corresp) c n
+(onds to the index location of ij in d1) N
+(  kl_trans_index = GetIndex\(trans_seq[k],trans_seq[l]\);) p
+(// kl_trans_index corresp) c n
+(onds to the index location of kl in d1) N
+( ) p n
+(  ) S
+(// ij_stack_index and kl_stack_index provide the indices ij\(row\) and kl\(column) c n
+(\) in stack37) N
+() p n
+(  ij_stack_index = d1[ij_trans_index];) S
+(// ij_stack_index is the index of ij in en) c n
+(ergy tables located in energy_par.c) N
+(  kl_stack_index = d1[kl_trans_index];) p
+(// kl_stack_index is the index of kl in en) c n
+(ergy tables located in energy_par.c) N
+() p n
+(  energy = stack[ij_stack_index][kl_stack_index];) S
+(// energy value is assigned as ) c n
+(energy_func.c) (Page 2/38) (Jun 12, 12 14:51) title
+border
+/v 2 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(intersection of ij_stack_index\(row\) and kl_stack_index\(column\) in stack37 in ene) c n
+(rgy_par.c) N
+() p n
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Stacking: \(%d,%d\) %c%c; \(%d,%d\) %c%c: %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),GetNucl) p n
+(\(trans_seq[j]\),k,l,GetNucl\(trans_seq[k]\),GetNucl\(trans_seq[l]\),energy\);) N
+(  }) N
+(  ) S
+(return) K
+( energy;  ) p n
+(}) N
+() N
+(/*) c n
+() N
+(  GetDangleEnergy) N
+() N
+(  Input:) N
+() N
+(  1\) position of i) N
+(  2\) position of j closing i) N
+(  3\) position of k; 0 if 5' dangle) N
+(  4\) position of l; 0 if 3' dangle) N
+() N
+(  Output:) N
+(  1\) dangle energy based on input) N
+() N
+() N
+(  Dangles are interior not EXTERIOR:) N
+() N
+( 5' dangle) N
+() N
+(  3' 5') N
+(   0l) N
+(   ij) N
+(  5' 3') N
+() N
+( 3' dangle) N
+() N
+(  3' 5') N
+(   k0) N
+(   ij) N
+(  5' 3') N
+( ) N
+(*/) N
+() p n
+(double) k
+( GetDangleEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\)) p n
+({) N
+(  ) S
+(int) k
+( ij_trans_index, kl_trans_index, ij_dangle_index, kl_dangle_index;) p n
+(  ) S
+(double) k
+( energy;) p n
+() N
+(  ) S
+(// dangle in table is interior, this is for when dangle is exterior  ) c n
+(  ) p
+(// input is reverse from way table is set up  ) c n
+(  ) p
+(if) K
+( \(i == 0 || j == 0\){) p n
+(    ) S
+(return) K
+( GetDangleEnergy\(l,k,j,i,trans_seq\);) p n
+(  }  ) N
+(  ) S
+(else) K
+({) p n
+(    ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) S
+(// need to get index to) c n
+( look up ij in d1) N
+(    ) p
+(if) K
+(\(k==0\){) p n
+(      kl_trans_index = GetIndex\(0,trans_seq[l]\);) S
+(// need to get index to look up ) c n
+(energy_func.c) (Page 3/38) (Jun 12, 12 14:51) title
+border
+/v 3 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(5' dangle in d1) c n
+(    }) p n
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(l==0\){) p n
+(      kl_trans_index = GetIndex\(trans_seq[k],0\);) S
+(// need to get index to look up ) c n
+(3' dangle in d1) N
+(    }) p n
+(    ij_dangle_index = d1[ij_trans_index];) S
+(// ij_dangle_index corresponds to index) c n
+( of ij\(row\) in dangle37 located in energy_par.c) N
+(    kl_dangle_index = d1[kl_trans_index];) p
+(// kl_dangle_index corresponds to index) c n
+( of dangle in dangle37 located in energy_par.c) N
+() p n
+(    energy = dangle[ij_dangle_index][kl_dangle_index];) S
+(// dangle energy correspon) c n
+(ds to intersect of ij_dangle_index\(row\) and kl_dangle_index\(column\) in dangle37) N
+(    ) p n
+(    ) S
+(if) K
+( \(DEBUG\){) p n
+(      ) S
+(if) K
+(\(k == 0\){      ) p n
+(        printf\(") S
+(3' Dangle: \(%d,%d\) %c%c; \(%d,%d\) 0%c: %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),Get) p n
+(Nucl\(trans_seq[j]\),k,l,GetNucl\(trans_seq[l]\),energy\);) N
+(      }) N
+(      ) S
+(else) K
+( ) p
+(if) K
+( \(l==0\){) p n
+(        printf\(") S
+(5' Dangle: \(%d,%d\) %c%c; \(%d,%d\) %c0: %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),Get) p n
+(Nucl\(trans_seq[j]\),k,l,GetNucl\(trans_seq[k]\),energy\);) N
+(      } ) N
+(    }) N
+() N
+(    ) S
+(return) K
+( energy;) p n
+(  }) N
+(}) N
+() N
+(/* GetTMMEnergy) c n
+() N
+(   input:) N
+(   1\) position of i in integer_seq) N
+(   2\) position of j closing i) N
+(   3\) position of k which is i+1 ) N
+(   4\) position of l which is j-1) N
+(   5\) integer sequence correspond to original sequence) N
+() N
+(   output:) N
+(   1\) Terminal mismatch energy) N
+() N
+(   TMM modeled as follows, interior:) N
+( ) N
+(   3'  5') N
+(     kl) N
+(     ij) N
+(   5'  3') N
+() N
+(   * ij is closing base pair, kl is not base paired but a mismatch. ) N
+() N
+(*/) N
+(double) k
+( GetTMMEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\)) p n
+({) N
+(  ) S
+(int) k
+( ij_trans_index, kl_trans_index, ij_tmm_index, kl_tmm_index;) p n
+(  ) S
+(double) k
+( energy;) p n
+() N
+(  ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) S
+(// ij_trans_index corresp) c n
+(onds to index of ij in d1) N
+(  kl_trans_index = GetIndex\(trans_seq[k],trans_seq[l]\);) p
+(// kl_trans_index corresp) c n
+(energy_func.c) (Page 4/38) (Jun 12, 12 14:51) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+() (1/10) (Tuesday June 12, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (5-8) 2
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(onds to index of kl in d1) c n
+() p n
+(  ij_tmm_index = d1[ij_trans_index];) S
+(// ij_tmm_index corresponds to index of ij\(r) c n
+(ow\) necessary to look up in TMM located in energy_par.c) N
+(  kl_tmm_index = d1[kl_trans_index];) p
+(// kl_tmm_index corresponds to index of kl\(c) c n
+(olumn\) necessary to look up in TMM located in energy_par.c; kl is not a basepair) N
+( but the Terminal mismatch) N
+() p n
+(  energy = TMM[ij_tmm_index][kl_tmm_index];) S
+(// energy corresponds to intersect of) c n
+( ij_tmm_index\(row_\) and kl_tmm_index\(column\) located in TMM in energy_par.c) N
+(  ) p n
+(  ) S
+(if) K
+( \(DEBUG\){) p n
+(    printf\(") S
+(TMM: \(%d,%d\) %c%c; \(%d,%d\) %c%c: %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),GetNucl\() p n
+(trans_seq[j]\),k,l,GetNucl\(trans_seq[k]\),GetNucl\(trans_seq[l]\),energy\);) N
+(  }) N
+(  ) N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+() N
+(/*) c n
+() N
+(  GetBulgeEnergy) N
+(  ) N
+(  Input:) N
+(  1\) position of i in input sequence) N
+(  2\) position of j closing i in input sequence) N
+(  3\) position of k in input sequence) N
+(  4\) position of l closing k in input sequence) N
+() N
+(  Output:) N
+(  1\) corresponding bulge energy) N
+() N
+(  Bulge energy is modeled as follows:) N
+() N
+(  3' 5'        3' 5') N
+(   kl           kl) N
+( .        or      .) N
+(   ij           ij) N
+(  5' 3'        5' 3') N
+() N
+(  AU/GU penalty in incorporated in energy such that if ij is AU or GU a penalty ) N
+(is added to the bulge cost) N
+() N
+(*/) N
+(double) k
+( GetBulgeEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( u, ) p
+(int) k
+( v, ) p
+(int) k
+(* trans_seq, ) p
+() k n
+(int) S
+( triplet_flag\)) p n
+({) N
+(  ) S
+(int) k
+( diffi, diffj;) p
+(// diffi is the difference between k and i, diffj is the diff) c n
+(erence between j and l; a value of 1 means there is no nucleotide between the po) N
+(sitions) N
+() p n
+(  ) S
+(double) k
+( bulge_energy,stack_energy;) p n
+(  bulge_energy = 0.0; ) N
+(  bulge_energy += Initiation; ) S
+(// Intermolecular initiation ) c n
+() p n
+(  diffi = k-i;) N
+(  diffj = j-l;) N
+() N
+(energy_func.c) (Page 5/38) (Jun 12, 12 14:51) title
+border
+/v 1 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(  ) p
+(if) K
+(\(DEBUG\){) p n
+(   printf\(") S
+(\\n) str
+("\);) p n
+(  }) N
+() N
+(  ) S
+(if) K
+( \(diffi == 1\){) p
+(// there is no nucleotide in between i and k so bulge is betwe) c n
+(en l and j) N
+(    ) p n
+(    ) S
+(// bulge_cost + special c bulge + stacking energy between i,j and k,l) c n
+(    ) p
+(if) K
+(\(diffj-1 <31\){) p n
+(      bulge_energy+=bulge[diffj-1];) S
+(// # of nucleotides in between l and j is dif) c n
+(fj -1, so not inclusive of k or j; bulge37 is a 1D integer array where index cor) N
+(responds to size of bulge and value stored at index is cost.) N
+(    }) p n
+(    ) S
+(else) K
+({) p
+(//if\(diffj-1<31,size of bulge is greater than 30) c n
+(      bulge_energy+=bulge[6]+1.75*R*T*log\(\(diffj-1\)/6.0\);) p n
+(    }) N
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(Bulge: \(%d\) %f\\n) str
+(",diffj-1,bulge_energy\);) p n
+(    }) N
+(    ) S
+(// if bulge just size of 1 base) c n
+(    ) p
+(if) K
+(\(diffj == 2\){) p
+(// remember that diffj-1 corresponds to bulge of size 1; must) c n
+( check if nucleotide inbetween l and j is C) N
+(      ) p
+(if) K
+(\(trans_seq[l+1] == 7\){ ) p
+(// check to see if its a C) c n
+(        bulge_energy+= C_bulge;) p
+(// special penatly for c bulge, C_bulge is locate) c n
+(d in energy_par.c) N
+(        ) p
+(if) K
+(\(DEBUG\){) p n
+(           printf\(") S
+(C penalty: %f\\n, Total Bulge Energy %f\\n) str
+(",C_bulge,bulge_energy\);) p n
+(        }) N
+(      }) N
+(      ) S
+(// add stacking base pair energy) c n
+(      ) p
+(if) K
+( \(triplet_flag && \(u-k-1 + l-v-1\) <=1\){) p n
+(        stack_energy=GetTripletEnergy\(i,j,k,l,u,v,trans_seq\);) S
+(// for bulge of siz) c n
+(e one must also add the stacking basepair of ij with k) N
+(        bulge_energy+=stack_energy;) p n
+(        ) S
+(if) K
+(\(DEBUG\){           ) p n
+(          printf\(") S
+(Triplet for Bulge: %f, %f\\n) str
+(",stack_energy, bulge_energy\);) p n
+(        }) N
+(      }) N
+(      ) S
+(else) K
+({) p n
+(        stack_energy=GetStackEnergy\(i,j,k,l,trans_seq\);) S
+(// for bulge of size one ) c n
+(must also add the stacking basepair of ij with kl) N
+(        bulge_energy+=stack_energy;) p n
+(        ) S
+(if) K
+(\(DEBUG\){) p n
+(          printf\(") S
+(Stacking for Bulge: %f %f\\n) str
+(",stack_energy,bulge_energy\);) p n
+(        }) N
+(      }) N
+(    }) N
+(    ) S
+(// check for AU or GU penalty at end of helix) c n
+(    ) p
+(else) K
+( ) p
+(if) K
+(\(trans_seq[j] == 12\){) p
+(// i is U) c n
+(     ) p
+(if) K
+( \(trans_seq[i] == 1 || trans_seq[i] == 3\){) p
+(// if i is A or G then there is) c n
+( a penalty) N
+(       bulge_energy+= GUAU_penalty;) p
+(// addition of penalty; GUAU_penalty is in en) c n
+(ergy_par.c) N
+(       ) p
+(if) K
+(\(DEBUG\){) p n
+(         printf\(") S
+(GU/AU penalty: \(%d,%d\) %c%c %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),GetNucl\(t) p n
+(rans_seq[j]\),GUAU_penalty\);) N
+(       }) N
+(     }) N
+(    }) N
+(energy_func.c) (Page 6/38) (Jun 12, 12 14:51) title
+border
+/v 2 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+( ) p n
+(  }) N
+() N
+(  ) S
+(else) K
+({) p
+(// if\(diffi == 1\);  there is no nucleotide between l and j so bulge is be) c n
+(tween i and k, same procedure as before when bulge was between l and j ) N
+() p n
+(    ) S
+(// bulge_cost + special c bulge + stacking energy between i,j and k,l) c n
+(    ) p
+(if) K
+(\(diffi-1 <31\){) p n
+(      bulge_energy+=bulge[diffi-1];) S
+(// # of nucleotides in between l and j is dif) c n
+(fj -1, so not inclusive of k or j; bulge37 is a 1D integer array where index cor) N
+(responds to size of bulge and value stored at index is cost.) N
+(    }) p n
+(    ) S
+(else) K
+({) p
+(//if\(diffj-1<31,size of bulge is greater than 30) c n
+(      bulge_energy+=bulge[6]+1.75*R*T*log\(\(diffi-1\)/6.0\);) p n
+(    }) N
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(Bulge: \(%d\) %f\\n) str
+(",diffi-1,bulge_energy\);) p n
+(    }) N
+(    ) S
+(// if bulge just size of 1 base) c n
+(    ) p
+(if) K
+(\(diffi == 2\){) p n
+(      ) S
+(if) K
+(\(trans_seq[i+1] == 7\){) p
+(// check to see if its a C) c n
+(        bulge_energy+= C_bulge;) p n
+(        ) S
+(if) K
+(\(DEBUG\){) p n
+(           printf\(") S
+(C penalty: %f, Total Bulge Energy: %f\\n) str
+(",C_bulge,bulge_energy\);) p n
+(        }) N
+(      }) N
+(      ) S
+(// add stacking base pair energy) c n
+(      ) p
+(if) K
+( \(triplet_flag && \(u-k-1+l-v-1\) <= 1\){) p n
+(        stack_energy=GetTripletEnergy\(i,j,k,l,u,v,trans_seq\);) S
+(// for bulge of siz) c n
+(e one must also add the stacking basepair of ij with k) N
+(        bulge_energy+=stack_energy;) p n
+(        ) S
+(if) K
+(\(DEBUG\){) p n
+(          printf\(") S
+(Triplet for Bulge: %f %f\\n) str
+(",stack_energy,bulge_energy\);) p n
+(        }) N
+(      }) N
+(      ) S
+(else) K
+({  ) p n
+(        stack_energy=GetStackEnergy\(i,j,k,l,trans_seq\);) S
+(// for bulge of size one ) c n
+(must also add the stacking basepair of ij with kl) N
+(        bulge_energy+=stack_energy;) p n
+(        ) S
+(if) K
+(\(DEBUG\){) p n
+(          printf\(") S
+(Stacking for Bulge: %f %f\\n) str
+(",stack_energy,bulge_energy\);) p n
+(        }) N
+(      }) N
+(    }) N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(trans_seq[j] == 12\){) p
+(// i is U) c n
+(     ) p
+(if) K
+( \(trans_seq[i] == 1 || trans_seq[i] == 3\){) p
+(// if i is A or G then there is) c n
+( a penalty) N
+(       bulge_energy+= GUAU_penalty;) p
+(// addition of penalty; GUAU_penalty is in en) c n
+(ergy_par.c) N
+(       ) p
+(if) K
+(\(DEBUG\){) p n
+(         printf\(") S
+(GU/AU penalty: \(%d,%d\) %c%c %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),GetNucl\(t) p n
+(rans_seq[j]\),GUAU_penalty\);) N
+(       }) N
+(     }) N
+(    }) N
+(   ) N
+(  }) N
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(energy_func.c) (Page 7/38) (Jun 12, 12 14:51) title
+border
+/v 3 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    printf\(") p
+(Total Bulge Energy: %f\\n) str
+(",bulge_energy\);   ) p n
+(  }) N
+(  ) S
+(return) K
+( bulge_energy;) p n
+(}) N
+() N
+(/* GetRightBulgeEnergy) c n
+() N
+(   input:) N
+(   1\) position i) N
+(   2\) position j closing i) N
+(   3\) position v) N
+(   4\) integer representation of sequence) N
+() N
+(   output:) N
+(   1\) Right bulge energy) N
+() N
+(   Modeled as follows:) N
+() N
+(   5'   3') N
+(      v) N
+(     ij) N
+(   3'   5'  ) N
+() N
+(   v-j represents right bulge; i+1 is basepaired to v) N
+() N
+(*/) N
+() p n
+(double) k
+( GetRightBulgeEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\)) p n
+({) N
+(  ) S
+(int) k
+( diffj;) p n
+(  ) S
+(double) k
+( bulge_energy, stack_energy;) p n
+(  bulge_energy = 0.0;) N
+(  bulge_energy += Initiation;) N
+(  diffj = j-l;) N
+(  ) N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(\\n) str
+("\);) p n
+(  }) N
+() N
+(  ) S
+(// bulge_cost + special c bulge) c n
+(  ) p
+(if) K
+(\(diffj-1 <31\){) p n
+(      bulge_energy+=bulge[diffj-1];) S
+(// # of nucleotides in between l and j is dif) c n
+(fj -1, so not inclusive of k or j; bulge37 is a 1D integer array where index cor) N
+(responds to size of bulge and value stored at index is cost.) N
+(    }) p n
+(  ) S
+(else) K
+({) p
+(//if\(diffj-1<31,size of bulge is greater than 30) c n
+(      bulge_energy+=bulge[6]+1.75*R*T*log\(\(diffj-1\)/6.0\);) p n
+(  }) N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Bulge: \(%d\) %f\\n) str
+(",diffj-1,bulge_energy\);) p n
+(  }) N
+(  ) S
+(// if bulge just size of 1 base) c n
+(  ) p
+(if) K
+(\(diffj == 2\){) p n
+(    ) S
+(if) K
+(\(trans_seq[l+1] == 7\){ ) p
+(// check to see if its a C) c n
+(      bulge_energy+= C_bulge;) p n
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(         printf\(") S
+(C penalty: %f\\n) str
+(",C_bulge\);) p n
+(      }) N
+(    }) N
+(energy_func.c) (Page 8/38) (Jun 12, 12 14:51) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+() (Tuesday June 12, 2012) (2/10) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (9-12) 3
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(  }) p n
+(  ) S
+(else) K
+( ) p
+(if) K
+(\(trans_seq[j] == 12\){) p
+(// i is U) c n
+(     ) p
+(if) K
+( \(trans_seq[i] == 1 || trans_seq[i] == 3\){) p
+(// if i is A or G then there is) c n
+( a penalty) N
+(       bulge_energy+= GUAU_penalty;) p
+(// addition of penalty; GUAU_penalty is in en) c n
+(ergy_par.c) N
+(       ) p
+(if) K
+(\(DEBUG\){) p n
+(         printf\(") S
+(GU/AU penalty: \(%d,%d\) %c%c %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),GetNucl\(t) p n
+(rans_seq[j]\),GUAU_penalty\);) N
+(       }) N
+(     }) N
+(  }) N
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(\\n) str
+("\);) p n
+(  }) N
+() N
+(  ) S
+(return) K
+( bulge_energy;) p n
+(}) N
+() N
+(/*) c n
+(  GetLeftBulgeEnergy) N
+() N
+(  Input:) N
+(  1\) position of i in sequence) N
+(  2\) position of j closing i) N
+(  3\) position of k in sequence) N
+(  4\) integer representation of sequence) N
+() N
+(  Output:) N
+(  1\) Left Bulge energy) N
+() N
+(  Modeled as follows) N
+() N
+(  3'   5') N
+(   k) N
+(   i j) N
+(  5'   3') N
+() N
+(  i->k represents the left bulge, one knows k is base paired to j-1) N
+() N
+(*/) N
+() p n
+(double) k
+( GetLeftBulgeEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( * trans_seq\)) p n
+({) N
+() N
+(    ) S
+(int) k
+( diffi;) p n
+() N
+(    ) S
+(double) k
+( bulge_energy, stack_energy; ) p n
+(    bulge_energy = 0.0;) N
+(    bulge_energy += Initiation; ) N
+(    diffi = k-i;) N
+() N
+() N
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(\\n) str
+("\);) p n
+(    }) N
+() N
+() N
+(energy_func.c) (Page 9/38) (Jun 12, 12 14:51) title
+border
+/v 1 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    ) p
+(// bulge_cost + special c bulge ) c n
+(    ) p
+(if) K
+(\(diffi-1 <31\){) p n
+(      bulge_energy+=bulge[diffi-1];) S
+(// # of nucleotides in between l and j is dif) c n
+(fj -1, so not inclusive of k or j; bulge37 is a 1D integer array where index cor) N
+(responds to size of bulge and value stored at index is cost.) N
+(    }) p n
+(    ) S
+(else) K
+({) p
+(//if\(diffi-1<31,size of bulge is greater than 30) c n
+(      bulge_energy+=bulge[6]+1.75*R*T*log\(\(diffi-1\)/6.0\);) p n
+(    }) N
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(Bulge: \(%d\) %f\\n) str
+(",diffi-1,bulge_energy\);) p n
+(    }) N
+(    ) S
+(// if bulge just size of 1 base) c n
+(    ) p
+(if) K
+(\(diffi == 2\){) p n
+(      ) S
+(if) K
+(\(trans_seq[i+1] == 7\){) p
+(// check to see if its a C) c n
+(        bulge_energy+= C_bulge;) p n
+(        ) S
+(if) K
+(\(DEBUG\){) p n
+(           printf\(") S
+(C penalty: %f\\n) str
+(",C_bulge\);) p n
+(        }) N
+(      }) N
+(    }) N
+() N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(trans_seq[j] == 12\){) p
+(// i is U) c n
+(     ) p
+(if) K
+( \(trans_seq[i] == 1 || trans_seq[i] == 3\){) p
+(// if i is A or G then there is) c n
+( a penalty) N
+(       bulge_energy+= GUAU_penalty;) p
+(// addition of penalty; GUAU_penalty is in en) c n
+(ergy_par.c) N
+(       ) p
+(if) K
+(\(DEBUG\){) p n
+(         printf\(") S
+(GU/AU penalty: \(%d,%d\) %c%c %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),GetNucl\(t) p n
+(rans_seq[j]\),GUAU_penalty\);) N
+(       }) N
+(     }) N
+(    }) N
+() N
+(  ) N
+(    ) S
+(return) K
+( bulge_energy;) p n
+(}) N
+() N
+(/*) c n
+() N
+(  GetInternal11) N
+(  ) N
+(  input:) N
+(  1\) position of i in seqeunce) N
+(  2\) position of j closing i) N
+(  3\) position of k in sequence) N
+(  4\) position of l closing k) N
+(  5\) integer converted sequence) N
+( ) N
+(  output:) N
+(  1\) Internal Loop Energy of 1x1 internal loop) N
+(  ) N
+() N
+(  Internal Loop 1x1 modeled as follows:) N
+() N
+( 3' 5'  ) N
+(  k l) N
+( x   y) N
+(  i j) N
+(energy_func.c) (Page 10/38) (Jun 12, 12 14:51) title
+border
+/v 2 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+( 5'  3') c n
+() N
+( ij and kl are basepairs) N
+( xy corresponds to the 1x1 internal loop, neither x or y are basepaired) N
+() N
+(*/) N
+(double) k
+( GetInternal11\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+(  ) S
+(double) k
+( energy;) p n
+(  ) S
+(int) k
+( xy_trans_index,xy_index,ij_trans_index,kl_trans_index,ij_index,kl_index,ij) p n
+(kl;) N
+() N
+(  ) S
+(// obtain id of 1x1 loop) c n
+(  xy_trans_index = GetIndex\(trans_seq[i+1],trans_seq[l+1]\);) p
+(// xy_trans_index cor) c n
+(responds to the index of xy in d1) N
+(  xy_index = d1[xy_trans_index]; ) p
+(// xy_index corresponds to the index of xy to l) c n
+(ook up in the internal11 table in energy_par.c) N
+(  ) p n
+(  ) S
+(// i,j,k,l) c n
+(  ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) p
+(// ij_trans_index corresp) c n
+(onds to the index of ij in d1) N
+(  kl_trans_index = GetIndex\(trans_seq[k],trans_seq[l]\);) p
+(// kl_trans_index corresp) c n
+(onds to the index of kl in d1) N
+() p n
+(  ij_index = d1[ij_trans_index];) S
+(// ij_index corresponds to the index of ij neces) c n
+(sary for lookup in energy tables) N
+(  kl_index = d1[kl_trans_index];) p
+(// kl_index corresponds to the index of kl neces) c n
+(sary for looup in energy tables) N
+() p n
+(  ijkl = linearize2D\(ij_index,kl_index\);) S
+(// *6 b/c there are 6 base pairs, linear) c n
+(ize the 2D stack array using row columnar multiplication to get the row for inte) N
+(rnal11: For example to get an index for ijkl one would take the ij_index * 6 to ) N
+(get the row and kl_index to know how many columns to move over. This value provi) N
+(des the row to look up in internal11) N
+() p n
+(  energy = internal11[ijkl][xy_index];) S
+(// corresponds to the 1x1 internal loop en) c n
+(ergy of base pairs ij and kl represented by ij_index\(row\) with a 1x1 internal lo) N
+(op identified by xy with xy_index\(column\) ) N
+(  energy += Initiation;) p n
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(\\n) str
+("\);) p n
+(    printf\(") S
+(Internal Loop 1x1: \(%d,%d\) %c%c to \(%d,%d\) %c%c, Loop \(%d,%d\) %c%c %f\\n) str
+(",i,j,GetNuc) p n
+(l\(trans_seq[i]\),GetNucl\(trans_seq[j]\),k,l,GetNucl\(trans_seq[k]\),GetNucl\(trans_se) N
+(q[l]\),i,l,GetNucl\(trans_seq[i+1]\),GetNucl\(trans_seq[l+1]\),energy\);) N
+(    printf\(") S
+(\\n) str
+("\);) p n
+(  }    ) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(/* GetInternal12) c n
+() N
+(   Input:) N
+(   1\) position of i in sequence) N
+(   2\) position of j closing i) N
+(   3\) position of k in sequence) N
+(   4\) position of l closing k in sequence) N
+(   5\) integer representation of sequence) N
+() N
+(energy_func.c) (Page 11/38) (Jun 12, 12 14:51) title
+border
+/v 3 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(   output:) c n
+(   1\) Internal 1x2 energy) N
+() N
+(   Modeled as follows; important to realize that there are modifications taken i) N
+(nto account if internal loop is 2x1 with 2 nucleotides between i and k and 1 bet) N
+(ween l and j:) N
+(  ) N
+(  3'  5') N
+(    kl  ) N
+(   0  b) N
+(   x  y) N
+(    ij) N
+(   5' 3') N
+() N
+(*/) N
+() p n
+(double) k
+( GetInternal12\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+() N
+(  ) S
+(int) k
+( ijkl, ij_trans_index, kl_trans_index, ij_index, kl_index;) p n
+(  ) S
+(int) k
+( x,y,xy,xy_index, b, ab , ab_index, xy_ab;) p n
+(  ) N
+(  ) S
+(double) k
+( energy;) p n
+() N
+(  ) S
+(/*) c n
+(    k l) N
+(   0   b ) N
+(   x   y ) N
+(    i j) N
+() N
+(  */) N
+() p n
+(  ) S
+(if) K
+( \(k-i == 2\){) p
+(// between i and k there is one nucleotide so there are two nucl) c n
+(eotides between k and l) N
+(  ) p n
+(    ) S
+(// get i component) c n
+() p n
+(    ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) S
+(// corresponds to index) c n
+( for ij in d1) N
+(    kl_trans_index = GetIndex\(trans_seq[k],trans_seq[l]\);) p
+(// corresponds to index) c n
+( for kl in d1) N
+() p n
+(    ij_index = d1[ij_trans_index];) S
+(// corresponds to index for ij in energy table) c n
+(s) N
+(    kl_index = d1[kl_trans_index];) p
+(// corresponds to index for kl in energy table) c n
+(s) N
+() p n
+(    ijkl = linearize2D\(ij_index,kl_index\);) S
+(// row columnar multilplication used t) c n
+(o obtain index of ijkl\(row\) used in GetInternal12) N
+() p n
+(    x = trans_seq[i+1];) S
+(// x corresponds to integer representation of nucleotide ) c n
+(at i+1) N
+(    y = trans_seq[l+2];) p
+(// y corresponds to integer representation of nucleotide ) c n
+(at l+2) N
+(  ) p n
+(    xy = GetIndex\(x,y\);) S
+(// xy corresponds to index of xy in d1) c n
+(    xy_index = d1[xy];) p
+(// xy_index corresponds to index of xy in energy tables) c n
+(  ) p n
+(    b = trans_seq[l+1];) S
+(// b corresponds to integer representation of nucleotide ) c n
+(energy_func.c) (Page 12/38) (Jun 12, 12 14:51) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+() (3/10) (Tuesday June 12, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (13-16) 4
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(at l+1) c n
+(    ab = GetIndex\(0,b\);) p
+(// ab corresponds to index of ab in d1; here a is 0 b/c t) c n
+(his a 1x2 internal loop where there is 1 un base paired nucleotide between i and) N
+( k) N
+() p n
+(    ab_index = d1[ab];) S
+(// ab_index corresponds to index of ab in energy tables) c n
+() p n
+(    xy_ab = linearize2D\(ab_index,xy_index\);) S
+(// xy_ab used to indentify 1x2 loop u) c n
+(sing row\(ab_index\) columnar\(xy_index\) multilplication. ) N
+(    energy = internal12[ijkl][xy_ab]; ) p
+(// energy is located in internal12 table i) c n
+(n energy_par.c at intersection of ijkl\(row\) and xy_ab\(column\)) N
+(    energy += Initiation;) p n
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(\\n) str
+("\);) p n
+(      printf\(") S
+(Internal Loop 1x2\(J\): \(%d,%d\) %c%c/\(%d,%d\) %c%c, J: \(%d,%d\), I: \(%d\) %f) str
+(",i,j,GetNucl) p n
+(\(trans_seq[i]\),GetNucl\(trans_seq[j]\),k,l,GetNucl\(trans_seq[k]\),GetNucl\(trans_seq) N
+([l]\),l+1,l+2,i+1,energy\);) N
+(      printf\(") S
+(\\n) str
+("\); ) p n
+(    }) N
+() N
+(  }) N
+() N
+(  ) S
+(/*) c n
+(    k l) N
+(   b   0) N
+(   x   y) N
+(    i j) N
+(  */) N
+() p n
+(  ) S
+(else) K
+({ ) p
+(//if\(k-i\)==2;  have to switch around to look up in table when bulge of 1) c n
+( is on j side, ij becomes ji, kl becomes lk) N
+(  ) p n
+(    ) S
+(// get i component) c n
+() p n
+(    ij_trans_index = GetIndex\(trans_seq[j],trans_seq[i]\); ) S
+(//ij to ji ) c n
+(    kl_trans_index = GetIndex\(trans_seq[l],trans_seq[k]\); ) p
+(//kl to lk) c n
+() p n
+(    ij_index = d1[ij_trans_index];) N
+(    kl_index = d1[kl_trans_index];) N
+() N
+(    ijkl = linearize2D\(ij_index,kl_index\);) N
+() N
+(    ) S
+(// get j component, only 1 bp missin gon ik side) c n
+() p n
+(    x = trans_seq[l+2]; ) S
+(// change from i+1 to l+2) c n
+(    y = trans_seq[i+1]; ) p
+(// change from l+2 to i+1) c n
+() p n
+(    xy = GetIndex\(x,y\);) N
+(    xy_index = d1[xy];) N
+(  ) N
+(    b = trans_seq[i+2];) N
+(    ab = GetIndex\(0,b\); ) S
+(// although in reality this is b,0 it is switched here f) c n
+(or the design of the table, the table only supports the model depicted above.) N
+() p n
+(    ab_index = d1[ab];) N
+() N
+(    xy_ab = linearize2D\(ab_index,xy_index\);) N
+(    energy = internal12[ijkl][xy_ab];) N
+(    energy += Initiation;) N
+(energy_func.c) (Page 13/38) (Jun 12, 12 14:51) title
+border
+/v 1 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    ) p
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(\\n) str
+("\);) p n
+(      printf\(") S
+(Internal Loop 1x2\(I\): \(%d,%d\) %c%c/\(%d,%d\) %c%c, I: \(%d,%d\), J: \(%d\) %f) str
+(",i,j,GetNucl) p n
+(\(trans_seq[i]\),GetNucl\(trans_seq[j]\),k,l,GetNucl\(trans_seq[k]\),GetNucl\(trans_seq) N
+([l]\),i+1,i+2,j-1,energy\);) N
+(      printf\(") S
+(\\n) str
+("\);) p n
+(    } ) N
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+() N
+(// draw picture to represent 2x2) c n
+(/*) N
+() N
+( GetInternal22) N
+() N
+( Input:) N
+( 1\) positon of i in sequence) N
+( 2\) position of j closing i) N
+( 3\) position of k in sequence) N
+( 4\) position of l closing k) N
+( 5\) integer representation of sequence) N
+() N
+( output:) N
+( 1\) 2x2 internal loop energy corresponding to sequence ) N
+() N
+(  k l) N
+(a     b) N
+(x     y) N
+(  i j) N
+( 5' 3') N
+() N
+( ij and kl are base paired with xy and ab representing the 2x2 loop) N
+() N
+(*/) N
+() p n
+(double) k
+( GetInternal22\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+(  ) S
+(int) k
+( ij_trans_index, kl_trans_index, ij_index, kl_index, ijkl;) p n
+(  ) S
+(int) k
+( x,y,a,b, xy_trans_index, ab_trans_index, xy_index, ab_index, xyab;) p n
+() N
+(  ) S
+(double) k
+( energy;) p n
+() N
+(  ) S
+(// get row component) c n
+() p n
+(  ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) S
+(// corresponds to index o) c n
+(f ij in d1) N
+(  kl_trans_index = GetIndex\(trans_seq[k],trans_seq[l]\);) p
+(// corresponds to index o) c n
+(f kl in d1) N
+() p n
+(  ij_index = d1[ij_trans_index];) S
+(// corresponds to index of ij in energy tables) c n
+(  kl_index = d1[kl_trans_index];) p
+(// corresponds to index of kl in energy tables) c n
+() p n
+(  ijkl = linearize2D\(ij_index,kl_index\);) S
+(// ijkl represents ij as opening bp of i) c n
+(nternal loop and kl as closing bp of internal loop. Row\(ij\) columnar\(kl\) multipl) N
+(ication is used to obtain ijkl which will be row value to look up in internal22) N
+(  ) p n
+(energy_func.c) (Page 14/38) (Jun 12, 12 14:51) title
+border
+/v 2 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(  ) p
+(// get column component) c n
+() p n
+(  ) S
+(// positions of x,y,a,b in sequence) c n
+(  x = i+1;) p n
+(  y = j-1;) N
+(  a = i+2;) N
+(  b = j-2;) N
+(  ) N
+(  xy_trans_index = GetIndex\(trans_seq[x], trans_seq[y]\);) S
+(// corresponds to index ) c n
+(of xy in d1) N
+(  ab_trans_index = GetIndex\(trans_seq[a], trans_seq[b]\);) p
+(// corresponds to index ) c n
+(of ab in d1) N
+() p n
+(  xy_index = d1[xy_trans_index];) S
+(// corresponds to index of xy in energy tables) c n
+(  ab_index = d1[ab_trans_index];) p
+(// corresponds to index of ab in energy tables) c n
+() p n
+(  xyab = linearize2D\(xy_index,ab_index\);) S
+(//uses row\(xy\) columnar\(ab\) multiplicati) c n
+(on to represent 2x2 internal loop) N
+() p n
+(  energy = internal22[ijkl][xyab];) S
+(// interest of ijkl\(row\) and column\(xyab\) in i) c n
+(nternal22) N
+(  energy += Initiation; ) p n
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(\\n) str
+("\);) p n
+(    printf\(") S
+(Internal Loop 2x2: \(%d,%d\) %c%c/ \(%d,%d\) %c%c, Loop: \(%d,%d\) %c%c, \(%d,%d\) %c%c %f\\n) str
+(") p n
+(,i,j,GetNucl\(trans_seq[i]\),GetNucl\(trans_seq[j]\),k,l,GetNucl\(trans_seq[k]\),GetNu) N
+(cl\(trans_seq[l]\),i+1,j-1,GetNucl\(trans_seq[i+1]\),GetNucl\(trans_seq[j-1]\),i+2,j-2) N
+(,GetNucl\(trans_seq[i+2]\),GetNucl\(trans_seq[j-2]\),energy\);) N
+(    printf\(") S
+(\\n) str
+("\);) p n
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(/* GetInternalEnergy) c n
+() N
+(   Input:) N
+(   1\) position of i in sequence) N
+(   2\) position of j closing i) N
+(   3\) position of k in sequence) N
+(   4\) position of l closing k) N
+(   5\) integer representation of sequence ) N
+() N
+(   Output:) N
+(   1\) Internal Loop energy * NOTE internal loop of 1x1, 1x2, and 2x2 are not han) N
+(dled here) N
+(  ) N
+() N
+(   There are two mismatch penalties to add i+1,j-1 and k-1,l+1) N
+(*/) S
+( ) p n
+() N
+(double) k
+( GetILEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( *trans_seq\){) p n
+(  ) S
+(int) k
+( diffi,diffj,diff;) p n
+(  diffi = k-i-1;) S
+(// corresponds to # nucleotides between k and i) c n
+(  diffj = j-l-1;) p
+(// corresponds to # nucleotides between j and l) c n
+(  diff = diffi*diffj;) p n
+(  ) S
+(if) K
+(\(\(diffi>2\)||\(diffj>2\)\)) p n
+(    ) S
+(return) K
+( GetInternalEnergy\(i,j,k,l,trans_seq\);) p n
+(  ) S
+(switch) K
+(\(diff\){) p n
+(energy_func.c) (Page 15/38) (Jun 12, 12 14:51) title
+border
+/v 3 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    ) p
+(case) K
+( 1:) p n
+() S 8 T () S
+(return) K
+( GetInternal11\(i,j,k,l,trans_seq\);) p n
+(    ) S
+(case) K
+( 2:) p n
+(        ) S
+(return) K
+( GetInternal12\(i,j,k,l,trans_seq\);) p n
+(    ) S
+(case) K
+( 4: ) p n
+() S 8 T () S
+(return) K
+( GetInternal22\(i,j,k,l,trans_seq\);) p n
+(  ) S
+(/*  default:) c n
+() S 8 T (return GetInternalEnergy\(i,j,k,l,trans_seq\);*/) N
+(  }) p n
+(  ) S
+(return) K
+( 10000000;) p n
+(}) N
+() N
+(double) k
+( GetInternalEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+() N
+(  ) S
+(int) k
+( diffi,diffj,asym;) p n
+(  ) S
+(int) k
+( x,y, ij_trans_index, xy_trans_index, ij_index, xy_index; ) p n
+(  ) S
+(double) k
+( energy = 0;) p n
+(  energy += Initiation; ) N
+(  diffi = k-i-1;) S
+(// corresponds to # nucleotides between k and i) c n
+(  diffj = j-l-1;) p
+(// corresponds to # nucleotides between j and l) c n
+(  asym = 0;  ) p
+(// part of internal loop penalty ) c n
+() p n
+(  ) S
+(if) K
+( \(diffj > diffi\){) p
+(// more unbased pairs on j-l than k-l) c n
+(   asym = diffj - diffi;) p
+(// assym is assigned as positive value difference betwee) c n
+(n # unbased paired nucleotides on k-i side vs j-l side) N
+(  }) p n
+(  ) S
+(else) K
+( ) p
+(if) K
+(\(diffi > diffj\){) p n
+(   asym = diffi - diffj;) N
+(  } ) N
+() N
+(  ) S
+(// internal cost energy) c n
+(  energy+=internal[diffi+diffj];) p
+(// cost of internal loop; just the sum of diffi ) c n
+(and diffj) N
+(  ) p
+(if) K
+(\(DEBUG\){ ) p n
+(    printf\(") S
+(\\n) str
+("\);) p n
+(    printf\(") S
+(Internal Loop cost:\(%d\) \(%d,%d\) %c%c and \(%d,%d\) %c%c %f\\n) str
+(",diffi+diffj,i,j,GetNu) p n
+(cl\(trans_seq[i]\),GetNucl\(trans_seq[j]\),k,l,GetNucl\(trans_seq[k]\),GetNucl\(trans_s) N
+(eq[l]\),energy\);) N
+(  }) N
+() N
+(  ) S
+(// assymetry) c n
+(  energy+=assymetry*\(asym\);) p
+(// assymetry penalty, value is in energy_par.c) c n
+(  ) p
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Assymetry: %d Energy: %f\\n) str
+(", asym, assymetry*\(asym\)\);) p n
+(  }) N
+() N
+(  ) S
+(//mismatch 1) c n
+(  x = i+1;) p n
+(  y = j-1;) N
+() N
+(  ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) S
+(// corresponds to ij inde) c n
+(x in d1) N
+(  xy_trans_index = GetIndex\(trans_seq[x],trans_seq[y]\);) p
+(// corresponds to kl inde) c n
+(x in d1) N
+() p n
+(  ij_index = d1[ij_trans_index];) S
+(// corresponds to index of ij in energy tables) c n
+(  xy_index = d1[xy_trans_index];) p
+(// corresponds to index of xy in energy tables) c n
+() p n
+(energy_func.c) (Page 16/38) (Jun 12, 12 14:51) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+() (Tuesday June 12, 2012) (4/10) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (17-20) 5
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(  energy+=TMM[ij_index][xy_index];) p
+(// corresponds to ij\(row\) and xy\(column\) in TM) c n
+(M table in energy_par.c) N
+(  ) p
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Internal Energy 1st TMM: \(%d,%d\) %c%c %f\\n) str
+(", x,y,GetNucl\(trans_seq[x]\), GetNu) p n
+(cl\(trans_seq[y]\), TMM[ij_index][xy_index]\);) N
+(  }) N
+() N
+() N
+(  ) S
+(//mismatch 2) c n
+(  x = k-1;) p n
+(  y = l+1;) N
+() N
+(  ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) S
+(// corresponds to ij inde) c n
+(x in d1) N
+(  xy_trans_index = GetIndex\(trans_seq[x],trans_seq[y]\);) p
+(// corresponds to kl inde) c n
+(x in d1) N
+() p n
+(  ij_index = d1[ij_trans_index];) S
+(// corresponds to index of ij in energy tables) c n
+(  xy_index = d1[xy_trans_index];) p
+(// corresponds to index of xy in energy tables) c n
+() p n
+(  energy+=TMM[ij_index][xy_index];) S
+(// corresponds to ij\(row\) and xy\(column\) in TM) c n
+(M table in energy_par.c; 2nd mismatch) N
+(  ) p
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Internal Energy 2nd TMM: \(%d,%d\) %c%c %f\\n) str
+(", x,y,GetNucl\(trans_seq[x]\), GetNu) p n
+(cl\(trans_seq[y]\), TMM[ij_index][xy_index]\);) N
+(  }) N
+() N
+(  ) S
+(// AU, GU closure) c n
+() p n
+(  ) S
+(if) K
+(\(trans_seq[j] == 12\){) p
+(// j is U) c n
+(    ) p
+(if) K
+(\(trans_seq[i] == 1 || trans_seq[i] == 3\){) p
+(// i is either A or G) c n
+(      energy+=AUGUinternal;) p
+(// add AU/GU penalty) c n
+(      ) p
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Internal Energy GU/AU closure: %f\\n) str
+(",GUAU_penalty\);) p n
+(      }) N
+(    }) N
+(  }) N
+() N
+(  ) S
+(if) K
+(\(trans_seq[l] == 12\){) p
+(// j is U) c n
+(    ) p
+(if) K
+(\(trans_seq[k] == 1 || trans_seq[k] == 3\){) p
+(// i is either A or G) c n
+(      energy+=AUGUinternal;) p
+(// add AU/GU penalty) c n
+(      ) p
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Internal Energy GU/AU opening: %f\\n) str
+(",GUAU_penalty\);) p n
+(      }) N
+(    }) N
+(  }) N
+() N
+(    ) S
+(//printf\("Internal Loop: Total Energy: %f\\n\\n",energy\);) c n
+() p n
+(  ) S
+(return) K
+( energy;) p n
+() N
+(}) N
+() N
+(double) k
+( GetHairpinEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+(  ) S
+(int) k
+( ij_trans_index, xy_trans_index, ij_index, xy_index, pos, x, y;) p n
+(  ) S
+(double) k
+( energy;) p n
+(  ) S
+(double) k
+( cost;   ) p n
+(  energy = 0.0; ) N
+(energy_func.c) (Page 17/38) (Jun 12, 12 14:51) title
+border
+/v 1 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+( ) p n
+(  ) S
+(int) k
+( diff = j-i-1;) p
+(//diff refers to the size of the loop) c n
+(  ) p
+(int) k
+( Cflag = 1; ) p
+(// var used to check for loop of all C's; there is a special pe) c n
+(nalty in this case; 1 is true for all C's, 0 is false ) N
+(  ) p
+(int) k
+( firstunbp_trans_index;) p
+(// represents i+1,i+2) c n
+(  ) p
+(int) k
+( middleunbp_trans_index;) p n
+(  ) S
+(int) k
+( lastunbp_trans_index;) p
+(// represents i+3 and i+4 if necessary\(loop size 4\) ) c n
+(  ) p
+(int) k
+( firstunbp;) p
+(// var to look up index in energy tables) c n
+(  ) p
+(int) k
+( lastunbp;) p
+(// var to look up index in energy tables) c n
+(  ) p
+(int) k
+( middleunbp;) p n
+(  ) S
+(int) k
+( bpfirst2inloop;) p n
+(  ) S
+(int) k
+( last4inloop;) p n
+(  ) S
+(int) k
+( bp;) p n
+(  ) S
+(int) k
+( bp_trans_index;) p n
+(  ) S
+(int) k
+( loop; ) p n
+() N
+(  ) S
+(// There are special hairpin costs for certain haiprin sequences of length 3,4) c n
+( and 6.) N
+(  ) p
+(if) K
+(\(diff >= 3\){) p n
+(    ) N
+(    ) S
+(// cost) c n
+(    ) p
+(if) K
+(\(diff == 3\){) p
+(// want to represent 3 nucleotides as IJ0K where I is i+1, J i) c n
+(s i+2, and K is i+3; this allows lookup in hairpin3 table located in energy_par.) N
+(c) N
+(      ) p n
+(      bp_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);      ) N
+(      firstunbp_trans_index= GetIndex\(trans_seq[i+1],trans_seq[i+2]\);) S
+(// correspo) c n
+(nds to i+1,i+2 index in d1) N
+(      lastunbp_trans_index = GetIndex\(0,trans_seq[i+3]\);) p
+(// corresponds to i+3,0 ) c n
+(index in d1) N
+(      bp = d1[bp_trans_index];) p n
+(      firstunbp = d1[firstunbp_trans_index];) S
+(// corresponds to index of i+1,i+2 i) c n
+(n energy tables) N
+(      lastunbp =  d1[lastunbp_trans_index];) p
+(// corresponds to index of i+3 in ene) c n
+(rgy tables ) N
+(      ) p n
+(      loop = linearize2D\(lastunbp,firstunbp\); ) N
+(      ) N
+(      cost =  hairpin3[bp][loop];) N
+(     ) N
+(      ) S
+(if) K
+( \(firstunbp == 12 && lastunbp == 3\){) p n
+(        cost += GGGhairpin; ) S
+(// special bonus for GGG hairpin) c n
+(      } ) p n
+(      ) N
+(    ) N
+(    }) S
+(else) K
+( ) p
+(if) K
+(\(diff == 4\){ ) p
+(//if\(diff==3\)) c n
+(      ) p n
+(      bp_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\); ) N
+(      firstunbp_trans_index= GetIndex\(trans_seq[i+1],trans_seq[i+2]\);) S
+(// correspo) c n
+(nds to i+1,i+2 index in d1) N
+(      lastunbp_trans_index = GetIndex\(trans_seq[i+3],trans_seq[i+4]\);) p
+(// correspo) c n
+(nds to i+3,i+4 index in d1) N
+() p n
+(      bp = d1[bp_trans_index];) N
+(      firstunbp = d1[firstunbp_trans_index];) S
+(// corresponds to index of i+1,i+2 i) c n
+(n energy tables) N
+(      lastunbp = d1[lastunbp_trans_index];) p n
+() N
+(      loop = linearize2D\(firstunbp,lastunbp\);) N
+(energy_func.c) (Page 18/38) (Jun 12, 12 14:51) title
+border
+/v 2 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+() p n
+(      cost = hairpin4[bp][loop];) N
+(    }) N
+(    ) N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(diff == 6\){) p
+(// if\(diff==4\)) c n
+(      bp_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) p n
+(      firstunbp_trans_index= GetIndex\(trans_seq[i+1],trans_seq[i+2]\);) S
+(// correspo) c n
+(nds to i+1,i+2 index in d1) N
+(      middleunbp_trans_index = GetIndex\(trans_seq[i+3],trans_seq[i+4]\);) p
+(// corres) c n
+(ponds to i+3,i+4 index in d1) N
+(      lastunbp_trans_index = GetIndex\(trans_seq[i+5],trans_seq[i+6]\);) p n
+() N
+(      bp = d1[bp_trans_index];) N
+(      firstunbp = d1[firstunbp_trans_index];) S
+(// corresponds to index of i+1,i+2 i) c n
+(n energy tables) N
+(      middleunbp = d1[middleunbp_trans_index];) p n
+(      lastunbp = d1[lastunbp_trans_index];) N
+(  ) N
+(      bpfirst2inloop = linearize2D\(bp,firstunbp\);) N
+(      last4inloop = linearize2D\(middleunbp,lastunbp\);) N
+() N
+(      cost = hairpin6[bpfirst2inloop][last4inloop];) N
+(    }) N
+() N
+(    ) S
+(// regular case) c n
+(    ) p
+(else) K
+( ) p
+(if) K
+(\(diff <= 30\){) p
+(// if \(diff==6\)) c n
+(      cost=hairpin[diff];) p n
+(    }) N
+(   ) N
+(    ) S
+(else) K
+({) p
+(// if diff > 30 use extrapolation below) c n
+(      cost=hairpin[6]+1.75*R*T*log\(\(diff\)/6.0\);) p n
+(    }) N
+(    ) N
+(    energy+=cost;) N
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(\\n) str
+("\);) p n
+(      printf\(") S
+(Hairpin Loop: Cost \(%d,%d\) %c%c %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),GetNucl\(tr) p n
+(ans_seq[j]\),cost\);) N
+(    }) N
+(    ) S
+(if) K
+(\(diff > 3\){) p n
+(      ) S
+(// mismatch located at i+1, j-1, note that i+1,j-1 are not basepairs) c n
+(      x = i+1;) p
+(// x is position of i+1) c n
+(      y = j-1;) p
+(// y is position of j-1) c n
+() p n
+(      ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) S
+(// corresponds to ind) c n
+(ex of i,j in d1) N
+(      xy_trans_index = GetIndex\(trans_seq[x],trans_seq[y]\);) p
+(// corresponds to ind) c n
+(ex of i+1, j-1 in d1) N
+() p n
+(      ij_index = d1[ij_trans_index];) S
+(// corresponds to index of i,j in energy tab) c n
+(le TMM in energy_par.c) N
+(      xy_index = d1[xy_trans_index];) p
+(// corresponds to index of i+1,j-1 in energy) c n
+( table TMM in energy_par.c) N
+(      ) p
+(//printf\("%d - %d : %d, %d - %d : %d\\n", i,j,ij_index,x,y,xy_index\);) c n
+(      energy+=TMM[ij_index][xy_index];) p n
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Hairpin Loop: TMM \(%d,%d\) %c%c and \(%d,%d\) %c%c %f\\n) str
+(",i,j,GetNucl\(trans_s) p n
+(eq[i]\),GetNucl\(trans_seq[j]\),i+1,j-1,GetNucl\(trans_seq[i+1]\),GetNucl\(trans_seq[j) N
+(-1]\),TMM[ij_index][xy_index]\);) N
+(energy_func.c) (Page 19/38) (Jun 12, 12 14:51) title
+border
+/v 3 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(      }) p n
+(    }) N
+(    ) S
+(else) K
+({) p n
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(TMM not added because loop is too small\\n) str
+("\);) p n
+(      }) N
+(    } ) N
+(    ) S
+(// uu or ga mismatch) c n
+(    ) p
+(if) K
+(\(\(xy_trans_index == 28 || xy_trans_index == 10\) && diff > 3\){) p
+(//special mis) c n
+(match penalty for uu\(index 28 in d1\) /ga\(index 10 in d1\) ) N
+(      energy+= UUGAmismatch;) p n
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Haiprin Loop: UU or GA mismatch: \(%d,%d\) %c%c  %f\\n) str
+(",i+1,j-1,GetNucl\(trans_) p n
+(seq[i+1]\),GetNucl\(trans_seq[j-1]\),UUGAmismatch\);) N
+(      }) N
+(    } ) N
+(    ) N
+(    ) S
+(// gg mismatch) c n
+(    ) p
+(else) K
+( ) p
+(if) K
+(\(xy_trans_index == 25 && diff > 3\){) p
+(// gg is at index 25 in d1) c n
+(      energy+= GGmismatch;) p n
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Hairpin Loop, GG mismatch: \(%d,%d\) %c%c %f\\n) str
+(",i+1,j-1,GetNucl\(trans_seq[i) p n
+(+1]\),GetNucl\(trans_seq[j-1]\),GGmismatch\); ) N
+(      }) N
+(    } ) N
+(   ) N
+(    ) S
+(// au/gu closure) c n
+(    ) p
+(if) K
+(\(ij_trans_index == 1 && diff > 3\){) p
+(//gu is at index 1 in d1 and au is at in) c n
+(dex 3 in d1) N
+(      energy+=GUclosure;) p n
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Hairpin Loop, Special GU closure: \(%d,%d\) %c%c %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]) p n
+(\),GetNucl\(trans_seq[j]\),GUclosure\);) N
+(      }) N
+(    }) N
+() N
+(    ) S
+(// check for c loop) c n
+(    ) p
+(for) K
+(\(pos = i+1; pos < j; pos++\){) p n
+(      ) S
+(if) K
+(\(trans_seq[pos] != 7\){) p n
+(        Cflag = 0;) S
+(// Cflag becomes false if nucleotide other than C present in l) c n
+(oop) N
+(        ) p
+(break) K
+(;) p n
+(      }) N
+(    }) N
+(      ) N
+(    ) S
+(if) K
+(\(Cflag\){) p
+(// if Cflag == 1; so all C's in loop) c n
+(      ) p
+(if) K
+( \(diff == 3\){) p n
+(        energy+= C3loop;) S
+(// special penalty for loop size of 3 all C) c n
+(        ) p
+(if) K
+(\(DEBUG\){) p n
+(          printf\(") S
+(Hairpin Loop, C3 loop: \(%d,%d,%d\) %c%c%c %f\\n) str
+(",i+1,i+2,i+3,GetNucl\(tran) p n
+(s_seq[i+1]\),GetNucl\(trans_seq[i+2]\),GetNucl\(trans_seq[i+3]\),C3loop\);) N
+(        }) N
+(      }) N
+(      ) S
+(else) K
+({) p
+(// if\(diff == 3\)) c n
+(        energy+=\(CloopA*diff+CloopB\);) p
+(// formula given for loop size greater than) c n
+( three, all C a*diff+b where CloopA and CloopB can be found in energy_par.c ) N
+(        ) p
+(if) K
+(\(DEBUG\){) p n
+(          printf\(") S
+(Hairpin Loop, C loop: size\(%d\) %f\\n) str
+(", diff, CloopA*diff+CloopB\);) p n
+(        }) N
+(energy_func.c) (Page 20/38) (Jun 12, 12 14:51) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+() (5/10) (Tuesday June 12, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (21-24) 6
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(      }) p n
+(    }) N
+(  }) N
+() N
+(  ) S
+(else) K
+({) p
+(//if\(diff >= 3\)) c n
+(    energy+= hairpin[diff];) p n
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(Hairpin Loop Cost: \(%d,%d\) %c%c %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),GetNucl\(tr) p n
+(ans_seq[j]\),hairpin37[diff]\);) N
+(    }) N
+(  }) N
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Hairpin Loop Total Energy: %f\\n\\n) str
+(",energy\);) p n
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(/* GetMultiloopCoaxEnergy) c n
+() N
+(   Input:) N
+(   1\) Int array of Helix where index is helix number and value is BP structure t) N
+(hat has startin bp\(int i, int j\) and closing bp \(int i, int j\)) N
+(   2\) 2D int array of children where row is helix number and column is int repre) N
+(senting children of helix) N
+(   3\) var to give helix number) N
+(   4\) bp to represent ) N
+(   5\) integer representation of sequence) N
+() N
+(   Output:) N
+(   1\) energy of multiloop including coaxial stacking) N
+() N
+(   Function is used when a multiloop is closed in GetStructureEnergy. Function c) N
+(alculates number of branches in ML, number base pairs inbetween branches and cal) N
+(culates penalty. ) N
+() N
+(*/) N
+() p n
+(double) k
+( GetMultiloopCoaxEnergy\(H* Helix, ) p
+(int) k
+(** children, ) p
+(int) k
+( pos, ) p
+(int) k
+( * bp, ) p
+(int) k
+( *) p n
+( trans_seq, ) S
+(int) k
+( CD_flag, ) p
+(int) k
+( tmm_flag\)) p n
+({) N
+(  ) S
+(double) k
+( energy,assym;) p n
+() N
+(  ) S
+(int) k
+( num_branch,index,Helix_index,unbp,coax_flag;) p
+(// coax_flag is used for when ) c n
+(there are more than 2 helices coaxially stacked) N
+(  ) p
+(int) k
+( i,j,k,l;) p n
+(  ) S
+(double) k
+( tmp_coax_energy, min_coax_energy; ) p
+(// necessary for coaxial stacking. In) c n
+( situation where \(\)\(\)\(\) only 2 of helices can be coaxially stacked so MFE coaxia) N
+(l stacking is calculated) N
+() p n
+(  unbp = 0;) N
+(  coax_flag = 0;) N
+() N
+(  num_branch = children[pos][0];) S
+(// 1st column holds number of branches for this ) c n
+(parent) N
+(  i = Helix[pos].close.i; ) p
+(// pos is the parent, so this is the parent i) c n
+(  j = Helix[pos].close.j; ) p
+(// parent j) c n
+( ) p n
+(energy_func.c) (Page 21/38) (Jun 12, 12 14:51) title
+border
+/v 1 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(  ) p
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Multiloop: \(%d,%d\) %c%c: Number of branches: %d\\n) str
+(", Helix[pos].close.i, Helix[p) p n
+(os].close.j, GetNucl\(trans_seq[Helix[pos].close.i]\),GetNucl\(trans_seq[Helix[pos]) N
+(.close.j]\),num_branch\);) N
+(  }) N
+(       ) N
+(  ) S
+(for) K
+(\(index = 1; index <= num_branch; index++\){) p
+(//start at 1 b/c 0 holds number o) c n
+(f branches) N
+(    Helix_index = children[pos][index];) p
+(// Helix_index is the index of the child ) c n
+(to look up in Helix) N
+(    k = Helix[Helix_index].start.i;) p
+(// k is the start bp i) c n
+(    l = Helix[Helix_index].start.j;) p
+(// l is the start bp j) c n
+(    ) p n
+(    ) S
+(if) K
+( \(index == 1\){) p n
+(      unbp+= k-i-1;) S
+(// situation where looking at last bp in parent helix\(i,j\) an) c n
+(d first bp\(k,l\) in first child helix: \(\(\(..\(\(\(..\)\)\)...\(\(\(...\)\)\)...\)\)\)) N
+(                                                                                ) p n
+(                                 ) S
+(//     i  k      l               j ) c n
+() p n
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Adding unbase paired: i is %d, k is %d, diff is %d\\n) str
+(",i,k,k-i-1\);) p n
+(      }) N
+(    }) N
+(    ) S
+(else) K
+({) p n
+(      unbp+= k-j-1;) S
+(//situation as follows: \(\(\(..\(\(\(..\)\)\)...\(\(\(...\)\)\)...\)\)\)) c n
+(                                          ) p
+(//    i      j   k       l) c n
+(       ) p
+(if) K
+(\(DEBUG\){) p n
+(         printf\(") S
+(Adding unbase paired: %d %d %d %d  k is %d, j is %d, diff is %d\\n) str
+(",i,j,k,l,k,j,k-j) p n
+(-1\);) N
+(        }) N
+(    }) N
+(    ) N
+(    ) S
+(// coaxial stacking) c n
+(    ) p
+(if) K
+( \(CD_flag\){ ) p n
+(      ) S
+(if) K
+( \(coax_flag == 1\){) p n
+(        ) S
+(if) K
+(\(k-i-1 <= 1\){) p
+(// coaxially stacked, want to choose minimum) c n
+(          tmp_coax_energy = GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) p n
+(          ) S
+(if) K
+( \(tmp_coax_energy < min_coax_energy\){) p n
+(          min_coax_energy = tmp_coax_energy;) N
+(          }) N
+(        }) N
+(        ) S
+(else) K
+({) p
+(// not coaxially stacked, so take the lowest coaxially stacked ener) c n
+(gy) N
+(          energy+=min_coax_energy;) p n
+(          coax_flag = 0;) N
+(        }) N
+(      }) N
+() N
+(      ) S
+(// check for coaxial stacking ) c n
+(      ) p
+(else) K
+( ) p
+(if) K
+(\(k-i-1 == 1 || k-i-1 == 0 || k-j-1 == 1 || k-j-1 == 0\){) p
+(//if\(coax_fl) c n
+(ag ==1\)) N
+(          coax_flag = 1;) p n
+(          min_coax_energy = GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) N
+(      }) N
+(    ) N
+(     ) N
+(      ) S
+(else) K
+( ) p
+(if) K
+(\(bp[l+1]==-1\){) p n
+(        energy+= tmm_flag*GetTMMEnergy\(l,k,l+1,k-1,trans_seq\);) N
+(      }) N
+(energy_func.c) (Page 22/38) (Jun 12, 12 14:51) title
+border
+/v 2 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(   ) p n
+(    }) N
+() N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[l+1]==-1 && bp[k-1]==-1\){) p n
+(        energy+= tmm_flag*GetTMMEnergy\(l,k,l+1,k-1,trans_seq\);) N
+(    }) N
+() N
+(    i = Helix[Helix_index].start.i;) N
+(    j = Helix[Helix_index].start.j;) N
+() N
+(  }) S
+(// close  for\(index = 1; index <= num_branch; index++\)) c n
+(  ) p n
+(  ) S
+(// last branch is i,j and opening branch is k,l: situation where you are at la) c n
+(st branch in ) N
+(  ) p
+(// loop and much check if coaxially stacked with parent helix   \(\(\(..\(\(\(..\)\)\).) c n
+(..\(\(\(...\)\)\)...\)\)\)) N
+(  ) p
+(//                                                                k           ) c n
+(  i       j   l                              ) N
+(  k = Helix[pos].close.i;) p n
+(  l = Helix[pos].close.j;) N
+(  unbp+= l-j-1;) N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(     printf\(") S
+(Adding unbase paired: l is %d, j is %d, diff is %d\\n) str
+(",l,j,l-j-1\);) p n
+(  }) N
+() N
+(  ) S
+(// coaxial stacking with last branch) c n
+() p n
+(  ) S
+(if) K
+( \(CD_flag\){) p n
+(    ) S
+(if) K
+( \(coax_flag == 1\){) p n
+(        ) S
+(if) K
+(\(l-j-1 == 1 || l-j-1 == 0\){) p n
+(          tmp_coax_energy = GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) N
+(          ) S
+(if) K
+( \(tmp_coax_energy < min_coax_energy\){) p n
+(            energy += tmp_coax_energy;) N
+(          }) N
+(        }) N
+(        ) S
+(else) K
+({) p n
+(          energy+=min_coax_energy;) N
+(          coax_flag = 0;) N
+(        }) N
+(    }) N
+() N
+(    ) S
+(else) K
+({) p n
+(        ) S
+(if) K
+(\(l-j-l <= 1\){) p n
+(          energy+=GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) N
+(        }) N
+(    } ) N
+(  }) N
+() N
+(  ) S
+(// Multiloop Assymetry Calculation) c n
+(  assym = unbp/num_branch;) p n
+(  ) S
+(if) K
+( \(assym > 2\){) p n
+(    assym = 2;) N
+(  }) N
+( ) N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Multiloop: \(%d,%d\) %c%c, unbp %d\\n) str
+(", Helix[pos].close.i, Helix[pos].close.j) p n
+(,GetNucl\(trans_seq[Helix[pos].close.i]\),GetNucl\(trans_seq[Helix[pos].close.j]\), ) N
+(unbp\);) N
+(  }) N
+(energy_func.c) (Page 23/38) (Jun 12, 12 14:51) title
+border
+/v 3 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+() p n
+(  ) S
+(// a term in multiloop energy calculation) c n
+(  energy += MultiloopA;) p n
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Multiloop A value: %f\\n) str
+(",MultiloopA\);) p n
+(  }) N
+() N
+(  ) S
+(// average assymetry) c n
+(  energy += MultiloopB*assym;) p n
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Average Assymetry: %f %f\\n) str
+(",assym,MultiloopB*assym\);) p n
+(  }) N
+(    ) N
+(  ) S
+(// num_branch ) c n
+(  energy += MultiloopC*num_branch;) p n
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Number of Branches: %d %f\\n) str
+(",num_branch,MultiloopC*num_branch\);) p n
+(  }) N
+() N
+(  ) S
+(// Multiloop Strain) c n
+(  ) p
+(if) K
+( \(num_branch == 3 && unbp < 2\){) p n
+(    energy+= MultiloopStrain;) N
+(  }) N
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Multiloop Total Energy: %f\\n\\n) str
+(",energy\);) p n
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(double) k
+( GetExteriorLoopEnergy\(H* Helix, ) p
+(int) k
+(** children, ) p
+(int) k
+( * bp, ) p
+(int) k
+( * trans_seq) p n
+(, ) S
+(int) k
+( CD_flag\)) p n
+({) N
+(  ) S
+(double) k
+( energy,assym;) p n
+() N
+(  ) S
+(int) k
+( index,Helix_index,coax_flag,num_branch;) p n
+(  ) S
+(int) k
+( i,j,k,l;) p n
+(  ) S
+(double) k
+( tmp_coax_energy, min_coax_energy;) p n
+() N
+(  energy = 0.0;) N
+() N
+(  coax_flag = 0;) N
+() N
+(  num_branch = children[0][0];) N
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Exterior loop: \(%d,%d\) %c%c: Number of branches: %d\\n) str
+(", Helix[children[0][1]].sta) p n
+(rt.i, Helix[children[0][num_branch]].start.j, GetNucl\(trans_seq[Helix[children[0) N
+(][1]].start.i]\), GetNucl\(trans_seq[Helix[children[0][num_branch]].start.j]\),num_) N
+(branch\);) N
+(  }) N
+() N
+(  ) S
+(for) K
+(\(index = 1; index < num_branch; index++\){) p n
+(    printf\(") S
+(Energy now is: %f\\n) str
+(",energy\);) p n
+(    Helix_index = children[0][index];) N
+(    i = Helix[Helix_index].start.i;) N
+(    j = Helix[Helix_index].start.j;) N
+(    Helix_index = children[0][index+1]; ) N
+(energy_func.c) (Page 24/38) (Jun 12, 12 14:51) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+() (Tuesday June 12, 2012) (6/10) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (25-28) 7
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    k = Helix[Helix_index].start.i;) p n
+(    l = Helix[Helix_index].start.j;) N
+() N
+(    ) S
+(// coaxial stacking) c n
+() p n
+(    ) S
+(if) K
+( \(CD_flag\){) p n
+(      ) S
+(if) K
+( \(coax_flag == 1\){) p n
+(        ) S
+(if) K
+(\(k-j-1 <= 1\){) p
+(// coaxially stacked, want to choose minimum) c n
+(          tmp_coax_energy = GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) p n
+(          ) S
+(if) K
+( \(tmp_coax_energy < min_coax_energy\){) p n
+(            min_coax_energy = tmp_coax_energy;) N
+(          }) N
+(        }) N
+(        ) S
+(else) K
+({) p
+(// not coaxially stacked, so take the lowest coaxially stacked ener) c n
+(gy) N
+(          energy+=min_coax_energy;) p n
+(          coax_flag = 0;) N
+(        }) N
+(      }) N
+() N
+(      ) S
+(else) K
+( ) p
+(if) K
+(\(k-j-1 <= 1\){) p
+(// if\(coax_flag == 1\)) c n
+(          coax_flag = 1;) p n
+(          min_coax_energy = GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) N
+(          ) S
+(if) K
+(\(index = num_branch-1\){) p n
+(            energy+=min_coax_energy;) N
+(            coax_flag = 0;) N
+(          }) N
+(      }) N
+(    ) N
+(      ) S
+(// add T.M.M) c n
+(      ) p
+(else) K
+( ) p
+(if) K
+( \(index == 1 && bp[j+1] == -1\){) p
+(// check for TMM on first helix) c n
+(        energy+= GetTMMEnergy\(j,i,j+1,i-1,trans_seq\);) p n
+(        ) S
+(if) K
+(\(bp[l+1] == -1\){) p
+(// check for TMM on next helix) c n
+(          energy+= GetTMMEnergy\(l,k,l+1,k-1,trans_seq\);) p n
+(        }  ) N
+(      }) N
+() N
+(      ) S
+(else) K
+( ) p
+(if) K
+(\(bp[l+1] == -1\){) p
+(// check for TMM on next helix) c n
+(        energy+= GetTMMEnergy\(l,k,l+1,k-1,trans_seq\);) p n
+(      }) N
+() N
+(    }) N
+(    ) N
+(    ) S
+(else) K
+( ) p
+(if) K
+( \(index == 1 && bp[j+1] == -1\){) p
+(// check for TMM on first helix) c n
+(        energy+= GetTMMEnergy\(j,i,j+1,i-1,trans_seq\);) p n
+(        ) S
+(if) K
+(\(bp[l+1] == -1\){) p
+(// check for TMM on next helix) c n
+(          energy+= GetTMMEnergy\(l,k,l+1,k-1,trans_seq\);) p n
+(        }) N
+(    }) N
+() N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[l+1] == -1\){) p
+(// check for TMM on next helix) c n
+(        energy+= GetTMMEnergy\(l,k,l+1,k-1,trans_seq\);) p n
+(    }) N
+() N
+(  }) S
+(// close for\(index = 1; index < num_branch; index++\)) c n
+() p n
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Exterior Loop: \(%d,%d\) %c%c %f\\n) str
+(", Helix[children[0][1]].start.i, Helix[chi) p n
+(ldren[0][num_branch]].start.j,GetNucl\(trans_seq[Helix[children[0][1]].start.i]\),) N
+(energy_func.c) (Page 25/38) (Jun 12, 12 14:51) title
+border
+/v 1 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(GetNucl\(trans_seq[Helix[children[0][num_branch]].start.j]\), energy\);) p n
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(/* GetCoaxEnergy) c n
+( ) N
+(   Inputs: ) N
+(   1\) position i in integer sequence; position i should correspond to the left b) N
+(p in the opening of a helix) N
+(   2\) position j closes i; right bp in the opening of a helix) N
+(   3\) position k in integer sequence; correspond to left bp in opening of a heli) N
+(x that stacks on ij) N
+(   4\) position l closes k) N
+(   5\) integer representation of sequence) N
+() N
+(   Output: Coaxial Stacking energy based on parameters) N
+() N
+(   Note: Must account for following instances:) N
+() N
+(   Opening helix in ML and first branch: \(\(\(\(...\(\(\(...\)\)\)...\(\(\(...\)\)\)...\)\)\)\)) N
+(                                            i   k       l               j) N
+() N
+(   Adjacent Helices:         \(\(\(\(...\(\(\(...\)\)\)...\(\(\(...\)\)\)...\)\)\)\)) N
+(                                    i       j   k       l) N
+() N
+(   Last branch in ML and opening helix for ML: \(\(\(\(...\(\(\(...\)\)\)...\(\(\(...\)\)\)...\)\)) N
+(\)\)) N
+(                                                  k               i       j   l) N
+() N
+() N
+(   In each case one must compare coaxial stacking with 5' and 3' dangles with in) N
+(dividual helices to coaxial stacking of both helices.) N
+() N
+(*/) N
+() p n
+(double) k
+( GetCoaxEnergy\() p
+(int) k
+( i,) p
+(int) k
+( j,) p
+(int) k
+( k,) p
+(int) k
+( l,) p
+(int) k
+( *bp, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+(  ) S
+(// if basepair mediated coaxial stacking is TMM plus discontinuity penalty) c n
+() p n
+(  ) S
+(/* if flush coaxial stacking treat as stacking basepairs) c n
+(     must compare with having just dangles */) N
+() p n
+() N
+(  ) S
+(double) k
+( energy = 0.0;) p n
+(  ) S
+(double) k
+( tmp_energy, dangle_energy, coax_energy;) p n
+() N
+(  ) S
+(/* ij is the closing bp of stem that opens multiloop, kl is opening bp of firs) c n
+(t branch) N
+(     one helix followed by another \(\).\(\)) N
+(  */) N
+(  ) p
+(if) K
+( \(k-i-1 == 1\){) p
+(// unpaired bp in between) c n
+() p n
+(    ) S
+(if) K
+(\(bp[l+1] == -1\){) p
+(// unpaired nuc in l+1 pos) c n
+(      energy = GetTMMEnergy\(l,k,l+1,k-1,trans_seq\);) p n
+(      energy+= DisconPenalty; ) N
+(    ) N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(energy_func.c) (Page 26/38) (Jun 12, 12 14:51) title
+border
+/v 2 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(        printf\(") p
+(Calculating Coaxial Stacking between %d, %d and %d, %d: Unpaired nucleotide in l+1 positio) str n
+(n, energy is %f\\n\\n) S
+(",i,j,k,l,energy\);) p n
+(      }) N
+(    }) N
+() N
+(    ) S
+(if) K
+(\(bp[j-1] == -1\){) p
+(// unpaired nuc in j-1 pos) c n
+(      tmp_energy = GetTMMEnergy\(i,j,i+1,j-1,trans_seq\);) p n
+(      ) S
+(if) K
+( \(tmp_energy < energy\){) p n
+(        energy = tmp_energy;) N
+(      }) N
+() N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Calculating Coaxial Stacking between %d, %d and %d, %d: Unpaired nucleotide in j-1 positio) str n
+(n, energy is %f\\n\\n) S
+(",i,j,k,l,energy\);) p n
+(      } ) N
+(    }) N
+(  }) S
+(// close if \(k-i-1 == 1\)) c n
+(  ) p
+(/*) c n
+(   ij is the closing bp of stem that opens multiloop, kl is opening bp of first ) N
+(branch) N
+(   unmediated stacking \(\)\(\)) N
+(  */) N
+(  ) p
+(else) K
+( ) p
+(if) K
+(\(k-i-1 == 0\){ ) p
+(//if\(k-i-1 == 1\) need to compare coaxial energy with dang) c n
+(le energy) N
+(    coax_energy = GetStackEnergy\(i,j,k,l,trans_seq\);   ) p n
+(    ) S
+(if) K
+(\(bp[j-1] == -1 && bp[l+1] == -1\){) p n
+(      dangle_energy = GetDangleEnergy\(i,j,0,j-1,trans_seq\);  ) S
+(// 3 prime dangle) c n
+(      dangle_energy += GetDangleEnergy\(0,l+1,k,l,trans_seq\); ) p
+(// 3 prime dangle ) c n
+(    } ) p n
+(  ) N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[j-1] == -1\){) p
+(//  if\(bp[j-1] == -1 && bp[l+1] == -1\)) c n
+(      dangle_energy = GetDangleEnergy\(i,j,0,j-1,trans_seq\);  ) p
+(// 3 prime dangle) c n
+(    }) p n
+(    ) N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[l+1] == -1\){) p
+(// else if\(bp[j-1] == -1\){) c n
+(      dangle_energy += GetDangleEnergy\(0,l+1,k,l,trans_seq\); ) p
+(// 3 prime dangle) c n
+(    }) p n
+() N
+(    ) S
+(if) K
+(\(coax_energy <= dangle_energy\){) p n
+(      energy = coax_energy;) N
+(    ) N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Calculating Coaxial Stacking between %d, %d and %d %d: Flush, energy: %f\\n\\n) str
+(",i,j,k,l) p n
+(,energy\);) N
+(      }) N
+(    }) N
+() N
+(    ) S
+(else) K
+({) p
+(// if\(coax_energy <= dangle_energy\)) c n
+(      energy = dangle_energy;) p n
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Calculating dangles between %d, %d and %d %d: energy:  %f\\n\\n) str
+(",i,j,k,l,energy\);) p n
+(      }) N
+(    }) N
+() N
+(  }) N
+() N
+(  ) S
+(/* one helix followed by another \(\).\(\) */) c n
+(  ) p
+(else) K
+( ) p
+(if) K
+( \(k-j-1 == 1\){) p
+(// else if\(k-i-1 == 0\); unpaired bp in between) c n
+() p n
+(energy_func.c) (Page 27/38) (Jun 12, 12 14:51) title
+border
+/v 3 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    ) p
+(if) K
+(\(bp[l+1] == -1\){) p
+(// unpaired nuc in l+1 pos) c n
+(      energy = GetTMMEnergy\(l,k,l+1,k-1,trans_seq\);) p n
+(      energy+= DisconPenalty;) N
+() N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Calculating Coaxial Stacking between %d, %d and %d, %d: Unpaired nucleotide in l+1 positio) str n
+(n, energy is %f\\n\\n) S
+(",i,j,k,l,energy\);) p n
+(      }) N
+(    }) N
+() N
+(    ) S
+(if) K
+(\(bp[i-1] == -1\){) p
+(// unpaired nuc in i-1 pos) c n
+(      tmp_energy = GetTMMEnergy\(j,i,j+1,i-1,trans_seq\);) p n
+(      ) S
+(if) K
+( \(tmp_energy < energy\){) p n
+(        energy = tmp_energy;) N
+(      }) N
+() N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Calculating Coaxial Stacking between %d, %d and %d, %d: Unpaired nucleotide in i-1 positio) str n
+(n, energy is %f\\n\\n) S
+(",i,j,k,l,energy\);) p n
+(      }) N
+(    }) N
+(  }) N
+(  ) N
+(  ) S
+(/* unmediated coaxial stacking \(\)\(\) */) c n
+(  ) p
+(else) K
+( ) p
+(if) K
+(\(k-j-1 == 0\){ ) p
+(//else if \(k-j-1 == 1\); need to compare coaxial energy wi) c n
+(th dangle energy) N
+(    coax_energy = GetStackEnergy\(i,j,k,l,trans_seq\);) p n
+(    ) S
+(if) K
+(\(bp[j+1] == -1 && bp[l+1] == -1\){) p n
+(      dangle_energy = GetDangleEnergy\(i-1,0,i,j,trans_seq\);  ) S
+(// 5 prime dangle) c n
+(      dangle_energy += GetDangleEnergy\(k,l,0,l+1,trans_seq\); ) p
+(// 3 prime dangle ) c n
+(    }) p n
+() N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[j-1] == -1\){) p n
+(      dangle_energy = GetDangleEnergy\(i-1,0,i,j,trans_seq\);  ) S
+(// 5 prime dangle) c n
+(    }) p n
+() N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[l+1] == -1\){) p n
+(      dangle_energy += GetDangleEnergy\(k,l,0,l+1,trans_seq\); ) S
+(// 3 prime dangle) c n
+(    }) p n
+() N
+(    ) S
+(if) K
+(\(coax_energy <= dangle_energy\){) p n
+(      energy = coax_energy;) N
+() N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Calculating Coaxial Stacking between %d, %d and %d %d: Flush, energy: %f\\n\\n) str
+(",i,j,k,l) p n
+(,energy\);) N
+(      }) N
+(    }) N
+() N
+(    ) S
+(else) K
+({) p
+(//if\(coax_energy <= dangle_energy\)) c n
+(      energy = dangle_energy;) p n
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Calculating dangles between %d, %d and %d %d: energy:  %f\\n\\n) str
+(",i,j,k,l,energy\);) p n
+(      }) N
+(    }) N
+() N
+(  }) N
+( ) N
+(  ) S
+(/* last branch of multiloop coaxial stacks with opening stem of ML */) c n
+(energy_func.c) (Page 28/38) (Jun 12, 12 14:51) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+() (7/10) (Tuesday June 12, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (29-32) 8
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(  ) p
+(else) K
+( ) p
+(if) K
+( \(l-j-1 == 1\){) p
+(// else if \(k-j-1\) == 1; unpaired bp in between) c n
+() p n
+(    ) S
+(if) K
+(\(bp[k+1] == -1\){) p
+(// unpaired nuc in k+1 pos) c n
+(      energy = GetTMMEnergy\(k,l,k+1,l-1,trans_seq\);) p n
+(      energy+= DisconPenalty;) N
+() N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Calculating Coaxial Stacking between %d, %d and %d, %d: Unpaired nucleotide in k+1, energ) str n
+(y is %f\\n\\n) S
+(",i,j,k,l,energy\);) p n
+(      }) N
+(    }) N
+() N
+(    ) S
+(if) K
+(\(bp[i-1] == -1\){) p
+(// unpaired nuc in i-1 pos) c n
+(      tmp_energy = GetTMMEnergy\(j,i,j+1,i-1,trans_seq\);) p n
+(      ) S
+(if) K
+( \(tmp_energy < energy\){) p n
+(        energy = tmp_energy;) N
+(      }) N
+() N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Calculating Coaxial Stacking between %d, %d and %d, %d: Unpaired nucleotide in i-1 positio) str n
+(n, energy is %f\\n\\n) S
+(",i,j,k,l,energy\);) p n
+(      }) N
+(    }) N
+(  }) N
+(  ) N
+(  ) S
+(else) K
+( ) p
+(if) K
+(\(l-j-1 == 0\){ ) p
+(// need to compare coaxial energy with dangle energy) c n
+(    coax_energy = GetStackEnergy\(i,j,k,l,trans_seq\);) p n
+(    ) S
+(if) K
+(\(bp[i-1] == -1 && bp[k+1] == -1\){) p n
+(      dangle_energy = GetDangleEnergy\(k,l,k+1,0,trans_seq\);) N
+(      dangle_energy += GetDangleEnergy\(i-1,0,i,j,trans_seq\);) N
+(    }) N
+() N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[j-1] == -1\){) p n
+(      dangle_energy = GetDangleEnergy\(k,l,k+1,0,trans_seq\);) N
+(    }) N
+() N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[l+1] == -1\){) p n
+(      dangle_energy += GetDangleEnergy\(i-1,0,i,j,trans_seq\);) N
+(    }) N
+() N
+(    ) S
+(if) K
+(\(coax_energy <= dangle_energy\){) p n
+(      energy = coax_energy;) N
+() N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Calculating Coaxial Stacking between %d, %d and %d %d: Flush, energy: %f\\n\\n) str
+(",i,j,k,l) p n
+(,energy\);) N
+(      }) N
+(    }) N
+() N
+(    ) S
+(else) K
+({) p n
+(      energy = dangle_energy;) N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Calculating dangles between %d, %d and %d %d: energy:  %f\\n\\n) str
+(",i,j,k,l,energy\);) p n
+(      }) N
+(    }) N
+() N
+(  }) N
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(energy_func.c) (Page 29/38) (Jun 12, 12 14:51) title
+border
+/v 1 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    printf\(") p
+(Coaxial Stacking: \(%d,%d\) %c%c/ \(%d,%d\) %c%c %f\\n) str
+(",i,j,GetNucl\(trans_seq[i]\),G) p n
+(etNucl\(trans_seq[j]\),k,l,GetNucl\(trans_seq[k]\),GetNucl\(trans_seq[l]\),energy\);) N
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(double) k
+( GetStructureEnergy\() p
+(int) k
+( * trans_seq, ) p
+(char) k
+( * secstr, ) p
+(int) k
+( triplet_flag, ) p
+(int) k
+( ) p n
+(CD_flag, ) S
+(int) k
+( tmm_flag\){) p n
+(  ) S
+(double) k
+( energy;) p n
+(  energy = 0.0; ) N
+(  ) S
+(int) k
+( pos,i,j,k,l,k_index,index,len, par_index, par_j,par_ij,child_index,diffi,d) p n
+(iffj,flag;) N
+(  ) S
+(int) k
+( * bp;) p
+(// ordered bp list) c n
+(  ) p
+(int) k
+( ** BooleanMatrix;) p
+(// need to generate Boolean Matrix to check bp in between) c n
+( i,j) N
+() p n
+(  ) S
+(//Added for triple model) c n
+(  ) p
+(int) k
+( u;) p
+(//i+2) c n
+(  ) p
+(int) k
+( v;) p
+(//j-2) c n
+(  ) p
+(int) k
+( diffi2;) p
+(//diff between u and k) c n
+(  ) p
+(int) k
+( diffj2;) p
+(//diff betwenn v and l) c n
+(  ) p
+(//----------------------) c n
+() p n
+(  flag = 0;  ) N
+(  len = strlen\(secstr\);) N
+(  bp = GetBPList\(secstr,len\);) N
+() N
+(  BooleanMatrix = Allocate2Dmatrix\(len,len\);) N
+(  BooleanMatrix = BPBetweenBool\(BooleanMatrix,bp,len\);) N
+(  index = 1;) N
+() N
+(  ) S
+(// helix, stores start and closing BP) c n
+(  H * Helix;  ) p n
+(  Helix = \(H*\)\(malloc\(MAXBP * ) S
+(sizeof) K
+(\(H\)\)\);) p n
+(   ) N
+(  ) S
+(// parent) c n
+() p n
+(  ) S
+(int) k
+( par[MAXBP];) p n
+(  ) N
+(  ) S
+(// children) c n
+(  ) p n
+(  ) S
+(int) k
+( **children = Allocate2Dmatrix\(MAXBP, MAXCHILDREN\);) p n
+(  ) S
+(for) K
+( \(pos = 0; pos < MAXBP; pos++\){) p n
+(    children[pos][0] = 0;) S
+(// want to start 1 over from 0, 0 is where you store in) c n
+(dex) N
+(  }) p n
+() N
+(  ) S
+(int) k
+( numbp = 0;) p n
+() N
+(  ) S
+(// initialize helix) c n
+(  ) p
+(for) K
+(\(pos = 0; pos < len; pos++\){) p n
+(    ) S
+(if) K
+(\(bp[pos] != -1\){) p n
+(      i = pos;) N
+(      j = bp[pos];) N
+(      numbp++;) N
+(      ) S
+(break) K
+(;) p n
+(    }) N
+(  }) N
+(energy_func.c) (Page 30/38) (Jun 12, 12 14:51) title
+border
+/v 2 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(  Helix[0].start.i = 0;) p n
+(  Helix[0].start.j = len;) N
+(  Helix[index].start.i = i;) N
+(  Helix[index].start.j = j;) N
+() N
+() N
+(  ) S
+(// initialize parent and child) c n
+(  par[1] = 0;) p n
+(  ) S
+(int) k
+( lasti = i;) p n
+(  ) S
+(int) k
+( lastj = j;) p n
+(  ) S
+(//iterate through bps) c n
+() p n
+(  ) S
+(for) K
+(\(pos = i+1; pos < len; pos++\){) p n
+(    ) S
+(//find i,j,k,l) c n
+(   ) p n
+(    i = lasti;) N
+(    j = lastj;) N
+( ) N
+(    ) S
+(if) K
+(\(bp[pos] != -1 && bp[pos] > pos\){) p n
+(      k = pos;) N
+(      l = bp[pos];) N
+(      numbp++;) N
+(   ) N
+(      lasti = k;) N
+(      lastj = l;) N
+() N
+(      ) S
+(// get space inbetween i and k and l and j, for loop energy calculation) c n
+(      diffi = k-i;) p n
+(      diffj = j-l;) N
+() N
+(      ) S
+(// check if i,j is closing bp of stem so no bases in between) c n
+(      ) p
+(if) K
+(\(BooleanMatrix[i][j] == 0\){) p n
+( ) N
+(          ) S
+(// close helix) c n
+(          Helix[index].close.i = i;) p n
+(          Helix[index].close.j = j; ) N
+(    ) N
+(          ) S
+(// open a new helix) c n
+(          Helix[index+1].start.i = k;) p n
+(          Helix[index+1].start.j = l;) N
+(    ) N
+(          ) S
+(// get parent helix, need to get j of start of parent helix. ) c n
+(          par_index = par[index];) p n
+(          par_j = Helix[par_index].start.j;) N
+() N
+(          ) S
+(//parent of k,l is parent of parent of i,j - closing a multiloop) c n
+(          ) p
+(if) K
+(\(k > par_j\){) p n
+(            ) S
+(if) K
+(\(DEBUG\){) p n
+(              printf\(") S
+(closing last branch of multiloop with %d %d %d %d\\n) str
+(",i,j,k,par_j\);) p n
+(            }) N
+(            ) N
+(            ) S
+(// move up a level to get parent) c n
+(            par_ij = par[index];) p n
+(            par[index+1] = par[par_ij];) N
+(            energy+= GetHairpinEnergy\(i,j,trans_seq\);) N
+(            ) S
+(if) K
+(\(DEBUG\){) p n
+(              printf\(") S
+(ENERGY: %f\\n) str
+(", energy\); ) p n
+(            }) N
+() N
+(energy_func.c) (Page 31/38) (Jun 12, 12 14:51) title
+border
+/v 3 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(            ) p
+(//add child to parent) c n
+(            children[par[index+1]][0]++;) p
+(//increase number of branches by 1;  ) c n
+(            child_index = children[par[index+1]][0];) p n
+(            children[par[index+1]][child_index] = index+1;) N
+(            ) S
+(if) K
+(\(DEBUG\){) p n
+(              printf\(") S
+( Adding child %d to parent %d\\n) str
+(",index+1,par[index+1]\);) p n
+(            }) N
+(            energy+= GetMultiloopCoaxEnergy\(Helix, children, par[index], bp, tra) N
+(ns_seq, CD_flag, tmm_flag\);) N
+(            index++;) N
+(          }) N
+(  ) N
+(          ) S
+(else) K
+({) p n
+(  ) N
+(            ) S
+(// parent doesn't change) c n
+(            par[index+1] = par[index];) p n
+(            energy+= GetHairpinEnergy\(i,j,trans_seq\);) N
+(            printf\(") S
+(ENERGY: %f\\n) str
+(", energy\); ) p n
+() N
+(            ) S
+(//add child to parent ) c n
+(            children[par[index+1]][0]++;) p
+(// increase number of branches by 1 ) c n
+(            child_index = children[par[index+1]][0];) p n
+(            children[par[index+1]][child_index] = index+1;) N
+(            printf\(") S
+(In ML: Adding child %d to parent %d\\n) str
+(",index+1,par[index+1]\);) p n
+(            index++;) N
+(          } ) N
+(      ) N
+(      }) N
+() N
+(      ) S
+(// opening up a multiloop) c n
+(      ) p
+(else) K
+( ) p
+(if) K
+(\(BooleanMatrix[l][j] == 1\){) p n
+(      ) N
+(          Helix[index].close.i = i;) N
+(          Helix[index].close.j = j;) N
+() N
+(          Helix[index+1].start.i = k;) N
+(          Helix[index+1].start.j = l;) N
+() N
+(          par[index+1] = index;) N
+(   ) N
+() N
+(          children[index][0]++;) S
+(// increase number of branches by 1   ) c n
+(          child_index = children[index][0];) p n
+(          children[index][child_index] = index+1;) N
+(          printf\(") S
+(Opening ML: Adding child %d to parent %d\\n) str
+(",index+1,index\);) p n
+(    ) N
+(          index++;) N
+(      }  ) N
+( ) N
+(      ) S
+(else) K
+( {) p n
+(        ) N
+( ) N
+(          ) S
+(// stacking and triplet energy ) c n
+(          ) p
+(if) K
+(\(diffi == 1 && diffj == 1\){) p n
+(            ) S
+(if) K
+(\(pos<len-1\){) p n
+(              u = pos+1;) N
+(              v = bp[pos+1];) N
+(              diffi2 = u-k;) N
+(              diffj2 = l-v;) N
+(energy_func.c) (Page 32/38) (Jun 12, 12 14:51) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+() (Tuesday June 12, 2012) (8/10) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (33-36) 9
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(              ) p n
+(              ) S
+(if) K
+(\(diffi2==1 && diffj2==1 && triplet_flag\){) p n
+(                ) S
+(//triplet_flag = triplet_flag + 1;) c n
+(                energy+=triplet_flag*GetTripletEnergy\(i,j,k,l,u,v,trans_seq\);) p n
+(                ) S
+(//triplet_flag = 0;) c n
+(              }) p n
+(              ) S
+(else) K n
+(                energy+=GetStackEnergy\(i,j,k,l,trans_seq\);) p n
+(              ) N
+(            }) S
+(else) K
+({            ) p n
+(              printf\(") S
+(Here\\n) str
+("\);) p n
+(              energy+=GetStackEnergy\(i,j,k,l,trans_seq\);) N
+(            }) N
+(            printf\(") S
+(ENERGY: %f\\n) str
+(", energy\);) p n
+(          }) N
+(   ) N
+(          ) S
+(else) K
+({) p
+(// if\(diffi == 1 && diffj == 1\)) c n
+(            ) p
+(// bulge) c n
+(            ) p
+(if) K
+(\(diffi == 1 && diffj > 1\){) p n
+(              u = pos+1;) N
+(              v = bp[pos+1];) N
+(              energy+= GetBulgeEnergy\(i, j, k, l,u,v,trans_seq, triplet_flag\);) N
+(              printf\(") S
+(ENERGY: %f\\n) str
+(", energy\);) p n
+(            }) N
+(            ) N
+(            ) S
+(else) K
+( ) p
+(if) K
+(\(diffi > 1 && diffj == 1\){) p n
+(              u = pos+1;) N
+(              v = bp[pos+1];) N
+(              energy+= GetBulgeEnergy\(i, j, k, l,u,v,trans_seq, triplet_flag\);) N
+(              printf\(") S
+(ENERGY: %f\\n) str
+(", energy\);) p n
+(            }) N
+(            ) S
+(// internal 1x1) c n
+(            ) p
+(else) K
+( ) p
+(if) K
+(\(diffi == 2 && diffj == 2\){) p n
+(              energy+= GetInternal11\(i,j,k,l,trans_seq\);) N
+(              printf\(") S
+(ENERGY: %f\\n) str
+(", energy\);) p n
+(            }) N
+(            ) S
+(// internal 1x2) c n
+(            ) p
+(else) K
+( ) p
+(if) K
+(\(diffi == 2 && diffj == 3\){) p n
+(              energy+= GetInternal12\(i,j,k,l,trans_seq\);) N
+(              printf\(") S
+(ENERGY: %f\\n) str
+(", energy\);) p n
+(            }) N
+() N
+(            ) S
+(else) K
+( ) p
+(if) K
+(\(diffi == 3 && diffj == 2\){) p n
+(              energy+= GetInternal12\(i,j,k,l,trans_seq\);) N
+(              printf\(") S
+(ENERGY: %f\\n) str
+(", energy\);) p n
+(            }) N
+(            ) S
+(//internal 2x2 ) c n
+(            ) p
+(else) K
+( ) p
+(if) K
+(\(diffi == 3 && diffj == 3\){) p n
+(              energy+= GetInternal22\(i,j,k,l,trans_seq\);) N
+(              printf\(") S
+(ENERGY: %f\\n) str
+(", energy\);) p n
+(            }) N
+(            ) S
+(// internal energy) c n
+(            ) p
+(else) K
+({) p
+(// if\(diffi == 1 && diffj > 1\)) c n
+(              energy+=GetInternalEnergy\(i,j,k,l,trans_seq\);) p n
+(              printf\(") S
+(ENERGY: %f\\n) str
+(", energy\);) p n
+(            }) N
+() N
+(          }  ) N
+(      }) N
+(energy_func.c) (Page 33/38) (Jun 12, 12 14:51) title
+border
+/v 1 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    }) p n
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(pos == len-1 && numbp == 1\){) p n
+(      energy+= GetHairpinEnergy\(i,j,trans_seq\);) N
+(      printf\(") S
+(ENERGY: %f\\n) str
+(", energy\);) p n
+(    }) N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(pos == len-1 && numbp == 0\){) p n
+(      printf\(") S
+(Empty Structure: Energy is 0.0\\n) str
+("\);) p n
+(    }) N
+(    ) S
+(else) K
+({) p n
+(      ) S
+(continue) K
+(;) p n
+(    }) N
+(  }) N
+() N
+() N
+(  ) S
+(// special case for the closing bp of very last branch, not accounted for in m) c n
+(ain loop) N
+() p n
+(  ) S
+(if) K
+(\(BooleanMatrix[i][j] == 0\){) p n
+(    ) S
+(// close helix) c n
+(    Helix[index].close.i = i;) p n
+(    Helix[index].close.j = j;) N
+(    ) S
+(// parent doesn't change) c n
+(    energy+= GetHairpinEnergy\(i,j,trans_seq\);) p n
+(    ) S
+(if) K
+(\(par[index] != 0\){) p n
+(      printf\(") S
+(At Last branch and its in ML\\n) str
+("\);) p n
+(      energy+= GetMultiloopCoaxEnergy\(Helix, children, par[index], bp, trans_seq) N
+(,CD_flag,tmm_flag\);      ) N
+(    }) N
+(    ) S
+(else) K
+({) p n
+(    ) S
+(//add child to parent ) c n
+(    children[par[index]][0]++;) p
+(// increase number of branches by 1 ) c n
+(    child_index = children[par[index]][0];) p n
+(    children[par[index]][child_index] = index;) N
+() N
+(    printf\(") S
+(Adding child %d to parent %d\\n) str
+(",index,par[index]\);) p n
+(    }) N
+(  } ) N
+() N
+(  energy+=GetExteriorLoopEnergy\(Helix, children, bp, trans_seq, CD_flag\);) S
+(//exter) c n
+(ior loop) N
+( ) p n
+(  printf\(") S
+(FINAL ENERGY: %f\\n) str
+(", energy\); ) p n
+(  ) N
+(  ) S
+(//free) c n
+() p n
+(  free\(Helix\);) N
+(  ) S
+(for) K
+(\(i = 0; i < len; i++\){) p n
+(    free\(BooleanMatrix[i]\);) N
+(  }) N
+(  free\(BooleanMatrix\);) N
+(  ) S
+(for) K
+(\(i = 0; i < MAXBP; i++\){) p n
+(    free\(children[i]\);) N
+(  }) N
+(  free\(children\);) N
+(  free\(bp\);) N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(void) k
+( CreateEnergyTable\() p
+(double) k
+( T, ) p
+(int) k
+( tcflag\){) p n
+(energy_func.c) (Page 34/38) (Jun 12, 12 14:51) title
+border
+/v 2 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+() p n
+( ) S
+(int) k
+( i,j;) p n
+( ) S
+(double) k
+(  T37 = 310.15;) p n
+( T+=273.15;) N
+( ) S
+(//printf\("T37 is %f and T is %f\\n",T37,T\);) c n
+( ) p
+(if) K
+(\(T != T37\){) p n
+(   ) S
+(for) K
+(\(i = 0; i < 16; i++\){) p n
+(     ) S
+(for) K
+(\(j = 0; j < 16; j++\){) p n
+(       ) S
+(if) K
+( \(stack[i][j] != INF\){) p n
+(         ) S
+(if) K
+(\(tcflag == 0\){) p n
+(            stack[i][j] = stack_enthalpy37[i][j] - T*\(\(stack37[i][j]-stack_entha) N
+(lpy37[i][j]\)/\(-1 *T37\)\);) N
+(         } ) N
+(         ) S
+(else) K
+({ ) p n
+(            stack[i][j] = stack37[i][j] * \(T/T37\) - stack_enthalpy37[i][j] * T *) N
+( \(\(T-T37\)/\(T37*T37\)\);) N
+(         }) N
+(       }) N
+(       ) S
+(else) K
+( ) p
+(if) K
+( \(TMM[i][j] != INF\){) p n
+(         ) S
+(if) K
+( \(tcflag == 0\){ ) p n
+(           TMM[i][j] = TMM_enthalpy37[i][j] - T*\(\(TMM37[i][j]-TMM_enthalpy37[i][) N
+(j]\)/\(-1 *T37\)\);) N
+(         }  ) N
+(         ) S
+(else) K
+({) p n
+(           TMM[i][j] = TMM37[i][j] * \(T/T37\) - TMM_enthalpy37[i][j] * T * \(\(T-T3) N
+(7\)/\(T37*T37\)\);) N
+(         }) N
+(       }) N
+(     }     ) N
+(     ) S
+(for) K
+(\(j = 0; j < 8; j++\){) p n
+(       ) S
+(if) K
+( \(dangle[i][j] != INF\)) p n
+(         ) S
+(if) K
+( \(tcflag == 0\){) p n
+(           dangle[i][j] = dangle_enthalpy37[i][j] -T*\(\(dangle37[i][j]-dangle_ent) N
+(halpy37[i][j]\)/\(-1 *T37\)\);) N
+(         }) N
+(         ) S
+(else) K
+({) p n
+(           dangle[i][j] = dangle37[i][j] * \(T/T37\) - dangle_enthalpy37[i][j] * T) N
+( * \(\(T-T37\)/\(T37*T37\)\);) N
+(         }  ) N
+(     }) N
+() N
+(     ) S
+(for) K
+(\(j = 0; j < 64; j++\){) p n
+(       ) S
+(if) K
+( \(hairpin3[i][j] != INF\){) p n
+(         ) S
+(if) K
+(\(tcflag == 0\){) p n
+(           hairpin3[i][j] = hairpin3_enthalpy37[i][j]- T*\(\(hairpin3_37[i][j]-hai) N
+(rpin3_enthalpy37[i][j]\)/\(-1 *T37\)\);) N
+(         }) N
+(         ) S
+(else) K
+({) p n
+(           hairpin3[i][j] = hairpin3_37[i][j] * \(T/T37\) - hairpin3_enthalpy37[i]) N
+([j] * T * \(\(T-T37\)/\(T37*T37\)\);) N
+(         }) N
+(       } ) N
+(     }) N
+(   ) N
+(     ) S
+(for) K
+(\(j = 0; j < 256; j++\){) p n
+(       ) S
+(if) K
+( \(hairpin4[i][j] != INF\){) p n
+(         ) S
+(if) K
+(\(tcflag == 0\){) p n
+(           hairpin4[i][j] = hairpin4_enthalpy37[i][j]- T*\(\(hairpin4_37[i][j]-hai) N
+(rpin4_enthalpy37[i][j]\)/\(-1 *T37\)\);) N
+(energy_func.c) (Page 35/38) (Jun 12, 12 14:51) title
+border
+/v 3 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(         }) p n
+(         ) S
+(else) K
+({) p n
+(           hairpin4[i][j] = hairpin4_37[i][j] * \(T/T37\) - hairpin4_enthalpy37[i]) N
+([j] * T * \(\(T-T37\)/\(T37*T37\)\);) N
+(         }) N
+(       }) N
+(     }) N
+(   }) N
+() N
+(   ) S
+(for) K
+(\(i = 0; i < 256; i++\){) p n
+(     ) S
+(for) K
+(\(j = 0; j < 16; j++\){) p n
+(       ) S
+(if) K
+( \(internal11[i][j] != INF\){) p n
+(         ) S
+(if) K
+(\(tcflag == 0\){) p n
+(           internal11[i][j] = internal11_enthalpy37[i][j] - T*\(\(internal11_37[i]) N
+([j]-internal11_enthalpy37[i][j]\)/\(-1 *T37\)\); ) N
+(         }) N
+(         ) S
+(else) K
+({) p n
+(           internal11[i][j] = internal11_37[i][j] * \(T/T37\) - internal11_enthalp) N
+(y37[i][j] * T * \(\(T-T37\)/\(T37*T37\)\);) N
+(         }) N
+(       }) N
+(       ) S
+(if) K
+( \(triplet[i][j] != INF\){) p n
+(         ) S
+(if) K
+(\(tcflag == 0\){) p n
+(           triplet[i][j] = triplet_enthalpy37[i][j] - T*\(\(triplet37[i][j]-triple) N
+(t_enthalpy37[i][j]\)/\(-1 *T37\)\);) N
+(         }) N
+(         ) S
+(else) K
+( {) p n
+(          triplet[i][j] = triplet37[i][j] * \(T/T37\) - triplet_enthalpy37[i][j] *) N
+( T * \(\(T-T37\)/\(T37*T37\)\);) N
+(         }) N
+(       }) N
+(     }) N
+(     ) S
+(for) K
+(\(j = 0; j < 64; j++\){) p n
+(      ) S
+(if) K
+( \(internal12[i][j] != INF\){) p n
+(        ) S
+(if) K
+( \(tcflag == 0\){) p n
+(          internal12[i][j] = internal12_enthalpy37[i][j] - T*\(\(internal12_37[i][) N
+(j]-internal12_enthalpy37[i][j]\)/\(-1 *T37\)\) ;) N
+(        }) N
+(        ) S
+(else) K
+( {) p n
+(          internal12[i][j] = internal12_37[i][j] * \(T/T37\) - internal12_enthalpy) N
+(37[i][j] * T * \(\(T-T37\)/\(T37*T37\)\);) N
+(        }) N
+(      }) N
+(     }) N
+(     ) S
+(for) K
+(\(j = 0; j < 256; j++\){) p n
+(       ) S
+(if) K
+( \(internal22[i][j] != INF\){) p n
+(         ) S
+(if) K
+(\(tcflag == 0\){) p n
+(           internal22[i][j] = internal22_enthalpy37[i][j] - T*\(\(internal22_37[i]) N
+([j]-internal22_enthalpy37[i][j]\)/\(-1 *T37\)\); ) N
+(         } ) N
+(         ) S
+(else) K
+({) p n
+(           internal22[i][j] = internal22_37[i][j] * \(T/T37\) - internal22_enthalp) N
+(y37[i][j] * T * \(\(T-T37\)/\(T37*T37\)\);) N
+(         }) N
+(       }) N
+(       ) S
+(if) K
+( \(hairpin6[i][j] != INF\){) p n
+(         ) S
+(if) K
+(\(tcflag == 0\){) p n
+(           hairpin6[i][j] = hairpin6_enthalpy37[i][j] - T*\(\(hairpin6_37[i][j]-ha) N
+(irpin6_enthalpy37[i][j]\)/\(-1 *T37\)\);) N
+(energy_func.c) (Page 36/38) (Jun 12, 12 14:51) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+() (9/10) (Tuesday June 12, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (37-38) 10
+%%BeginPageSetup
+/pagesave save def
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(         } ) p n
+(         ) S
+(else) K
+({) p n
+(           hairpin6[i][j] = hairpin6_37[i][j] * \(T/T37\) - hairpin6_enthalpy37[i]) N
+([j] * T * \(\(T-T37\)/\(T37*T37\)\);) N
+(         }) N
+(       } ) N
+(     }) N
+(   }) N
+() N
+(   ) S
+(for) K
+(\(i = 0; i < 31; i++\){) p n
+(     ) S
+(if) K
+( \(hairpin[i] != INF\){) p n
+(       ) S
+(if) K
+(\(tcflag == 0\){) p n
+(         hairpin[i] = hairpin_enthalpy37[i] - T*\(\(hairpin37[i]-hairpin_enthalpy3) N
+(7[i]\)/\(-1 *T37\)\);) N
+(       }) N
+(       ) S
+(else) K
+({) p n
+(         hairpin[i] = hairpin37[i] * \(T/T37\) - hairpin_enthalpy37[i] * T * \(\(T-T) N
+(37\)/\(T37*T37\)\);) N
+(       }) N
+(     }) N
+(     ) S
+(if) K
+( \(internal[i] != INF\){) p n
+(       ) S
+(if) K
+(\(tcflag == 0\){) p n
+(         internal[i] = internal_enthalpy37[i] - T*\(\(internal37[i]-internal_entha) N
+(lpy37[i]\)/\(-1 *T37\)\);) N
+(       }) N
+(       ) S
+(else) K
+({) p n
+(         internal[i] = internal37[i] * \(T/T37\) - internal_enthalpy37[i] * T * \(\() N
+(T-T37\)/\(T37*T37\)\);) N
+(       }) N
+(     }) N
+(     ) S
+(if) K
+( \(bulge[i] != INF\){) p n
+(       ) S
+(if) K
+(\(tcflag == 0\){) p n
+(         bulge[i] = bulge_enthalpy37[i] - T*\(\(bulge37[i]-bulge_enthalpy37[i]\)/\(-) N
+(1 *T37\)\);) N
+(       }) N
+(       ) S
+(else) K
+({) p n
+(         bulge[i] = bulge37[i] * \(T/T37\) - bulge_enthalpy37[i] * T * \(\(T-T37\)/\(T) N
+(37*T37\)\);) N
+(       }) N
+(     }) N
+(   }) N
+(     ) N
+(if) K
+( \(tcflag == 0\){) p n
+( GUAU_penalty = GUAU_penalty_enthalpy37 -T*\(\(GUAU_penalty37-GUAU_penalty_enthalp) N
+(y37\)/\(-1 *T37\)\);) N
+( GGmismatch = GGmismatch_enthalpy37 -T*\(\(GGmismatch37-GGmismatch_enthalpy37\)/\(-1) N
+( *T37\)\); ) N
+( UUGAmismatch = UUGAmismatch_enthalpy37 -T*\(\(UUGAmismatch37-UUGAmismatch_enthalp) N
+(y37\)/\(-1 *T37\)\); ) N
+( GGGhairpin = GGGhairpin_enthalpy37 -T*\(\(GGGhairpin37-GGGhairpin_enthalpy37\)/\(-1) N
+(*T37\)\);) N
+( AUGUinternal = AUGUinternal_enthalpy37 -T*\(\(AUGUinternal37-AUGUinternal_enthalp) N
+(y37\)/\(-1 *T37\)\); ) N
+( GUclosure = GUclosure_enthalpy37 - T*\(\(GUclosure37-GUclosure_enthalpy37\)/\(-1*T3) N
+(7\)\); ) N
+( C_bulge = C_bulge_enthalpy37 - T*\(\(C_bulge37 - C_bulge_enthalpy37\)/\(-1 *T37\)\); ) N
+( C3loop = C3loop_enthalpy37 -T*\(\(C3loop37-C3loop_enthalpy37\)/\(-1 *T37\)\);) N
+( CloopA = CloopA_enthalpy37 -T*\(\(CloopA37- CloopA_enthalpy37\)/\(-1 *T37\)\);) N
+( CloopB = CloopB_enthalpy37 -T*\(\(CloopB37-CloopB_enthalpy37\)/\(-1 *T37\)\);) N
+(energy_func.c) (Page 37/38) (Jun 12, 12 14:51) title
+border
+/v 1 store
+/x0 x v get 2.373464 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+( MultiloopStrain = MultiloopStrain_enthalpy37 -T*\(\(MultiloopStrain37-MultiloopSt) p n
+(rain_enthalpy37\)/\(-1 *T37\)\);) N
+( MultiloopA = MultiloopA_enthalpy37 -T*\(\(MultiloopA37-MultiloopA_enthalpy37\)/\(-1) N
+( *T37\)\);) N
+( MultiloopB = MultiloopB_enthalpy37 -T*\(\(MultiloopB37-MultiloopB_enthalpy37\)/\(-1) N
+( *T37\)\);) N
+( MultiloopC = MultiloopC_enthalpy37-T*\(\(MultiloopC37-MultiloopC_enthalpy37\)/\(-1 ) N
+(*T37\)\);) N
+( DisconPenalty = DisconPenalty_enthalpy37 -T*\(\(DisconPenalty37-DisconPenalty_ent) N
+(halpy37\)/\(-1 *T37\)\);) N
+( Initiation = 0.0;) N
+(}) N
+( ) S
+(//Initiation = Initiation37 * \(T/T37\) - Initiation_enthalpy37 * T * \(\(T-T37\)/\(T) c n
+(37*T37\)\);) N
+(  ) p
+(else) K
+({) p n
+(    Initiation = 0.0;) N
+(    GUAU_penalty = GUAU_penalty37 * \(T/T37\) - GUAU_penalty_enthalpy37 * T * \(\(T-) N
+(T37\)/\(T37*T37\)\);) N
+(    GGmismatch = GGmismatch37 * \(T/T37\) - GGmismatch_enthalpy37 * T * \(\(T-T37\)/\() N
+(T37*T37\)\);) N
+(    UUGAmismatch = UUGAmismatch37 * \(T/T37\) - UUGAmismatch_enthalpy37 * T * \(\(T-) N
+(T37\)/\(T37*T37\)\);) N
+(    GGGhairpin = GGGhairpin37 * \(T/T37\) - GGGhairpin_enthalpy37 * T * \(\(T-T37\)/\() N
+(T37*T37\)\); ) N
+(    AUGUinternal = AUGUinternal37 * \(T/T37\) - AUGUinternal_enthalpy37 * T * \(\(T-) N
+(T37\)/\(T37*T37\)\);) N
+(    GUclosure = GUclosure37 * \(T/T37\) - GUclosure_enthalpy37 * T * \(\(T-T37\)/\(T37) N
+(*T37\)\);) N
+(    C_bulge = C_bulge37 * \(T/T37\) - C_bulge_enthalpy37 * T * \(\(T-T37\)/\(T37*T37\)\)) N
+(;) N
+(    C3loop = C3loop37 * \(T/T37\) - C3loop_enthalpy37 * T * \(\(T-T37\)/\(T37*T37\)\);) N
+(    CloopA = CloopA37 * \(T/T37\) - CloopA_enthalpy37 * T * \(\(T-T37\)/\(T37*T37\)\);) N
+(    CloopB = CloopB37 * \(T/T37\) - CloopB_enthalpy37 * T * \(\(T-T37\)/\(T37*T37\)\);) N
+(   ) S
+(// printf\("A %f B %f\\n",CloopA,CloopB\);) c n
+(    MultiloopStrain = MultiloopStrain37 * \(T/T37\) - MultiloopStrain_enthalpy37 *) p n
+( T * \(\(T-T37\)/\(T37*T37\)\);) N
+(    MultiloopA = MultiloopA37 * \(T/T37\) - MultiloopA_enthalpy37 * T * \(\(T-T37\)/\() N
+(T37*T37\)\);) N
+(    MultiloopB = MultiloopB37 * \(T/T37\) - MultiloopB_enthalpy37 * T * \(\(T-T37\)/\() N
+(T37*T37\)\);) N
+(    MultiloopC = MultiloopC37 * \(T/T37\) - MultiloopC_enthalpy37 * T * \(\(T-T37\)/\() N
+(T37*T37\)\);) N
+(    DisconPenalty = DisconPenalty37 * \(T/T37\) - DisconPenalty_enthalpy37 * T * \() N
+(\(T-T37\)/\(T37*T37\)\);) N
+(  }) N
+( }) N
+(}) N
+(energy_func.c) (Page 38/38) (Jun 12, 12 14:51) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+() (Tuesday June 12, 2012) (10/10) footer
+end % of iso1dict
+pagesave restore
+showpage
+
+%%Trailer
+end
+%%EOF

@@ -1,0 +1,3 @@
+#define MAXSIZE 3000
+#define MAXBP 1500
+#define MAXCHILDREN 100

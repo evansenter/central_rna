@@ -1,0 +1,2643 @@
+%!PS-Adobe-3.0
+%%Title: energy_func.c
+%%For: Vinodh Mechery
+%%Creator: a2ps version 4.13
+%%CreationDate: Fri Jan  6 15:54:13 2012
+%%BoundingBox: 24 24 588 768
+%%DocumentData: Clean7Bit
+%%Orientation: Landscape
+%%Pages: 7
+%%PageOrder: Ascend
+%%DocumentMedia: Letter 612 792 0 () ()
+%%DocumentNeededResources: font Courier
+%%+ font Courier-Bold
+%%+ font Courier-BoldOblique
+%%+ font Courier-Oblique
+%%+ font Helvetica
+%%+ font Helvetica-Bold
+%%+ font Symbol
+%%+ font Times-Bold
+%%+ font Times-Roman
+%%DocumentProcessColors: Black 
+%%DocumentSuppliedResources: procset a2ps-a2ps-hdr
+%%+ procset a2ps-black+white-Prolog
+%%+ encoding ISO-8859-1Encoding
+%%EndComments
+/a2psdict 200 dict def
+a2psdict begin
+%%BeginProlog
+%%Copyright: (c) 1988, 89, 90, 91, 92, 93 Miguel Santana
+%%Copyright: (c) 1995, 96, 97, 98 Akim Demaille, Miguel Santana
+% Check PostScript language level.
+/languagelevel where {
+  pop /gs_languagelevel languagelevel def
+} {
+  /gs_languagelevel 1 def
+} ifelse
+
+% EPSF import as in the Red Book
+/BeginInclude {
+  /b4_Inc_state save def    		% Save state for cleanup
+  /dict_count countdictstack def	% Count objects on dict stack
+  /op_count count 1 sub def		% Count objects on operand stack 
+  userdict begin
+    0 setgray 0 setlinecap
+    1 setlinewidth 0 setlinejoin
+    10 setmiterlimit [ ] 0 setdash newpath
+    gs_languagelevel 1 ne {
+      false setstrokeadjust false setoverprint 
+    } if
+} bind def
+
+/EndInclude {
+  count op_count sub { pos } repeat	% Clean up stacks
+  countdictstack dict_count sub { end } repeat
+  b4_Inc_state restore
+} bind def
+
+/BeginEPSF {
+  BeginInclude
+  /showpage { } def
+} bind def
+
+/EndEPSF {
+  EndInclude
+} bind def
+
+% Page prefeed
+/page_prefeed {         % bool -> -
+  statusdict /prefeed known {
+    statusdict exch /prefeed exch put
+  } {
+    pop
+  } ifelse
+} bind def
+
+/deffont {
+  findfont exch scalefont def
+} bind def
+
+/reencode_font {
+  findfont reencode 2 copy definefont pop def
+} bind def
+
+% Function c-show (str => -)
+% centers text only according to x axis.
+/c-show { 
+  dup stringwidth pop
+  2 div neg 0 rmoveto
+  show
+} bind def
+
+% Function l-show (str => -)
+% prints texts so that it ends at currentpoint
+/l-show {
+  dup stringwidth pop neg 
+  0 
+  rmoveto show
+} bind def
+
+% center-fit show (str w => -)
+% show centered, and scale currentfont so that the width is less than w
+/cfshow {
+  exch dup stringwidth pop
+  % If the title is too big, try to make it smaller
+  3 2 roll 2 copy
+  gt
+  { % if, i.e. too big
+    exch div
+    currentfont exch scalefont setfont
+  } { % ifelse
+    pop pop 
+  }
+  ifelse
+  c-show			% center title
+} bind def
+
+% Return the y size of the current font
+% - => fontsize
+/currentfontsize {
+  currentfont /FontType get 0 eq {
+    currentfont /FontMatrix get 3 get
+  }{
+    currentfont /FontMatrix get 3 get 1000 mul
+  } ifelse
+} bind def
+
+% reencode the font
+% <encoding-vector> <fontdict> -> <newfontdict>
+/reencode { %def
+  dup length 5 add dict begin
+    { %forall
+      1 index /FID ne 
+      { def }{ pop pop } ifelse
+    } forall
+    /Encoding exch def
+
+    % Use the font's bounding box to determine the ascent, descent,
+    % and overall height; don't forget that these values have to be
+    % transformed using the font's matrix.
+    % We use `load' because sometimes BBox is executable, sometimes not.
+    % Since we need 4 numbers an not an array avoid BBox from being executed
+    /FontBBox load aload pop
+    FontMatrix transform /Ascent exch def pop
+    FontMatrix transform /Descent exch def pop
+    /FontHeight Ascent Descent sub def
+
+    % Define these in case they're not in the FontInfo (also, here
+    % they're easier to get to.
+    /UnderlinePosition 1 def
+    /UnderlineThickness 1 def
+    
+    % Get the underline position and thickness if they're defined.
+    currentdict /FontInfo known {
+      FontInfo
+      
+      dup /UnderlinePosition known {
+	dup /UnderlinePosition get
+	0 exch FontMatrix transform exch pop
+	/UnderlinePosition exch def
+      } if
+      
+      dup /UnderlineThickness known {
+	/UnderlineThickness get
+	0 exch FontMatrix transform exch pop
+	/UnderlineThickness exch def
+      } if
+      
+    } if
+    currentdict 
+  end 
+} bind def
+
+% composite fonts for ASCII-EUC mixed string
+% Version 1.2 1/31/1990
+% Orignal Ken'ichi HANDA (handa@etl.go.jp)
+% Modified Norio Katayama (katayama@rd.nacsis.ac.jp),1998
+% Extend & Fix Koji Nakamaru (maru@on.cs.keio.ac.jp), 1999
+% Anyone can freely copy, modify, distribute this program.
+
+/copyfont {	% font-dic extra-entry-count  copyfont  font-dic
+	1 index maxlength add dict begin
+	{	1 index /FID ne 2 index /UniqueID ne and
+		{def} {pop pop} ifelse
+	} forall
+	currentdict
+	end
+} bind def
+
+/compositefont { % ASCIIFontName EUCFontName RomanScale RomanOffset Rot(T/F) compositefont font
+    /RomanRotation exch def
+    /RomanOffset exch def
+    /RomanScale exch def
+    userdict /fixeucfont_dict known not {
+	userdict begin
+	    /fixeucfont_dict 2 dict begin
+		/UpperByteEncoding [
+		    16#00 1 16#20 { pop 0 } for
+		    16#21 1 16#28 { 16#20 sub } for
+		    16#29 1 16#2F { pop 0 } for
+		    16#30 1 16#74 { 16#27 sub } for
+		    16#75 1 16#FF { pop 0 } for
+		] def
+	        /LowerByteEncoding [
+		    16#00 1 16#A0 { pop /.notdef } for
+		    16#A1 1 16#FE { 16#80 sub 16 2 string cvrs
+				    (cXX) dup 1 4 -1 roll
+				    putinterval cvn } for
+		    /.notdef
+		] def
+		currentdict
+	    end def
+	end
+    } if
+    findfont dup /FontType get 0 eq {
+	14 dict begin
+	    %
+	    % 7+8 bit EUC font
+	    %
+	    12 dict begin
+		/EUCFont exch def
+		/FontInfo (7+8 bit EUC font) readonly def
+		/PaintType 0 def
+		/FontType 0 def
+		/FontMatrix matrix def
+		% /FontName
+		/Encoding fixeucfont_dict /UpperByteEncoding get def
+		/FMapType 2 def
+		EUCFont /WMode known
+		{ EUCFont /WMode get /WMode exch def }
+		{ /WMode 0 def } ifelse
+		/FDepVector [
+		    EUCFont /FDepVector get 0 get
+		    [ 16#21 1 16#28 {} for 16#30 1 16#74 {} for ]
+		    {
+			13 dict begin
+			    /EUCFont EUCFont def
+			    /UpperByte exch 16#80 add def	
+			    % /FontName
+			    /FontInfo (EUC lower byte font) readonly def
+			    /PaintType 0 def
+			    /FontType 3 def
+			    /FontMatrix matrix def
+			    /FontBBox {0 0 0 0} def
+			    /Encoding
+				fixeucfont_dict /LowerByteEncoding get def
+			    % /UniqueID
+			    % /WMode
+			    /BuildChar {
+				gsave
+				exch dup /EUCFont get setfont
+				/UpperByte get
+				2 string
+				dup 0 4 -1 roll put
+				dup 1 4 -1 roll put
+				dup stringwidth setcharwidth
+				0 0 moveto show
+				grestore
+			    } bind def
+			    currentdict
+			end
+			/lowerbytefont exch definefont
+		    } forall
+		] def
+		currentdict
+	    end
+	    /eucfont exch definefont
+	    exch
+	    findfont 1 copyfont dup begin
+		RomanRotation {
+			/FontMatrix FontMatrix
+			[ 0 RomanScale neg RomanScale 0 RomanOffset neg 0 ]
+			matrix concatmatrix def
+		}{
+			/FontMatrix FontMatrix
+			[ RomanScale 0 0 RomanScale 0 RomanOffset ] matrix concatmatrix
+			def
+			/CDevProc
+			    {pop pop pop pop 0 exch -1000 exch 2 div 880} def
+		} ifelse
+	    end
+	    /asciifont exch definefont
+	    exch
+	    /FDepVector [ 4 2 roll ] def
+	    /FontType 0 def
+	    /WMode 0 def
+	    /FMapType 4 def
+	    /FontMatrix matrix def
+	    /Encoding [0 1] def
+	    /FontBBox {0 0 0 0} def
+%	    /FontHeight 1.0 def % XXXX
+	    /FontHeight RomanScale 1.0 ge { RomanScale }{ 1.0 } ifelse def
+	    /Descent -0.3 def   % XXXX
+	    currentdict
+	end
+	/tmpfont exch definefont
+	pop
+	/tmpfont findfont
+    }{
+	pop findfont 0 copyfont
+    } ifelse
+} def	
+
+/slantfont {	% FontName slant-degree  slantfont  font'
+    exch findfont 1 copyfont begin
+    [ 1 0 4 -1 roll 1 0 0 ] FontMatrix exch matrix concatmatrix
+    /FontMatrix exch def
+    currentdict
+    end
+} def
+
+% Function print line number (<string> # -)
+/# {
+  gsave
+    sx cw mul neg 2 div 0 rmoveto
+    f# setfont
+    c-show
+  grestore
+} bind def
+
+% -------- Some routines to enlight plain b/w printings ---------
+
+% Underline
+% width --
+/dounderline {
+  currentpoint
+  gsave
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    0 rlineto
+    stroke
+  grestore
+} bind def
+
+% Underline a string
+% string --
+/dounderlinestring {
+  stringwidth pop
+  dounderline
+} bind def
+
+/UL {
+  /ul exch store
+} bind def
+
+% Draw a box of WIDTH wrt current font
+% width --
+/dobox {
+  currentpoint
+  gsave
+    newpath
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    dup 0 rlineto
+    0 currentfont /FontHeight get currentfontsize mul rlineto
+    neg 0 rlineto
+    closepath
+    stroke
+  grestore
+} bind def
+
+/BX {
+  /bx exch store
+} bind def
+
+% Box a string
+% string --
+/doboxstring {
+  stringwidth pop
+  dobox
+} bind def
+
+%
+% ------------- Color routines ---------------
+%
+/FG /setrgbcolor load def
+
+% Draw the background
+% width --
+/dobackground {
+  currentpoint
+  gsave
+    newpath
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    dup 0 rlineto
+    0 currentfont /FontHeight get currentfontsize mul rlineto
+    neg 0 rlineto
+    closepath
+    bgcolor aload pop setrgbcolor
+    fill
+  grestore
+} bind def
+
+% Draw bg for a string
+% string --
+/dobackgroundstring {
+  stringwidth pop
+  dobackground
+} bind def
+
+
+/BG {
+  dup /bg exch store
+  { mark 4 1 roll ] /bgcolor exch store } if
+} bind def
+
+
+/Show {
+  bg { dup dobackgroundstring } if
+  ul { dup dounderlinestring } if
+  bx { dup doboxstring } if
+  show
+} bind def
+
+% Function T(ab), jumps to the n-th tabulation in the current line
+/T {
+  cw mul x0 add
+  bg { dup currentpoint pop sub dobackground } if
+  ul { dup currentpoint pop sub dounderline } if
+  bx { dup currentpoint pop sub dobox } if
+  y0 moveto
+} bind def
+
+% Function n: move to the next line
+/n {
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+% Function N: show and move to the next line
+/N {
+  Show
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+/S {
+  Show
+} bind def
+
+%%BeginResource: procset a2ps-a2ps-hdr 2.0 2
+%%Copyright: (c) 1988, 89, 90, 91, 92, 93 Miguel Santana
+%%Copyright: (c) 1995, 96, 97, 98 Akim Demaille, Miguel Santana
+% Function title: prints page header.
+% <ct> <rt> <lt> are passed as argument
+/title { 
+  % 1. Draw the background
+  x v get y v get moveto
+  gsave
+    0 th 2 div neg rmoveto 
+    th setlinewidth
+    0.95 setgray
+    pw 0 rlineto stroke
+  grestore
+  % 2. Border it
+  gsave
+    0.7 setlinewidth
+    pw 0 rlineto
+    0 th neg rlineto
+    pw neg 0 rlineto
+    closepath stroke
+  grestore
+  % stk: ct rt lt
+  x v get y v get th sub 1 add moveto
+%%IncludeResource: font Helvetica
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  % 3. The left title
+  gsave
+    dup stringwidth pop fnfs 0.8 mul add exch % leave space took on stack
+    fnfs 0.8 mul hm rmoveto
+    show			% left title
+  grestore
+  exch
+  % stk: ct ltw rt
+  % 4. the right title
+  gsave
+    dup stringwidth pop fnfs 0.8 mul add exch % leave space took on stack
+    dup
+    pw exch stringwidth pop fnfs 0.8 mul add sub
+    hm
+    rmoveto
+    show			% right title
+  grestore
+  % stk: ct ltw rtw
+  % 5. the center title
+  gsave
+    pw 3 1 roll
+    % stk: ct pw ltw rtw
+    3 copy 
+    % Move to the center of the left room
+    sub add 2 div hm rmoveto
+    % What is the available space in here?
+    add sub fnfs 0.8 mul sub fnfs 0.8 mul sub
+    % stk: ct space_left
+%%IncludeResource: font Helvetica-Bold
+  fHelvetica-Bold fnfs scalefont setfont
+    cfshow
+  grestore
+} bind def
+
+% Function border: prints virtual page border
+/border { %def
+  gsave				% print four sides
+    0 setgray
+    x v get y v get moveto
+    0.7 setlinewidth		% of the square
+    pw 0 rlineto
+    0 ph neg rlineto
+    pw neg 0 rlineto
+    closepath stroke
+  grestore
+} bind def
+
+% Function water: prints a water mark in background
+/water { %def
+  gsave
+    scx scy moveto rotate
+%%IncludeResource: font Times-Bold
+  fTimes-Bold 100 scalefont setfont
+    .97 setgray
+    dup stringwidth pop 2 div neg -50 rmoveto
+    show
+  grestore
+} bind def
+
+% Function rhead: prints the right header
+/rhead {  %def
+  lx ly moveto
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  l-show
+} bind def
+
+% Function footer (cf rf lf -> -)
+/footer {
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  dx dy moveto
+  show
+
+  snx sny moveto
+  l-show
+  
+  fnx fny moveto
+  c-show
+} bind def
+%%EndResource
+%%BeginResource: procset a2ps-black+white-Prolog 2.0 1
+
+% Function T(ab), jumps to the n-th tabulation in the current line
+/T { 
+  cw mul x0 add y0 moveto
+} bind def
+
+% Function n: move to the next line
+/n { %def
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+% Function N: show and move to the next line
+/N {
+  Show
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+}  bind def
+
+/S {
+  Show
+} bind def
+
+/p {
+  false UL
+  false BX
+  fCourier bfs scalefont setfont
+  Show
+} bind def
+
+/sy {
+  false UL
+  false BX
+  fSymbol bfs scalefont setfont
+  Show
+} bind def
+
+/k {
+  false UL
+  false BX
+  fCourier-Oblique bfs scalefont setfont
+  Show
+} bind def
+
+/K {
+  false UL
+  false BX
+  fCourier-Bold bfs scalefont setfont
+  Show
+} bind def
+
+/c {
+  false UL
+  false BX
+  fCourier-Oblique bfs scalefont setfont
+  Show
+} bind def
+
+/C {
+  false UL
+  false BX
+  fCourier-BoldOblique bfs scalefont setfont
+  Show 
+} bind def
+
+/l {
+  false UL
+  false BX
+  fHelvetica bfs scalefont setfont
+  Show
+} bind def
+
+/L {
+  false UL
+  false BX
+  fHelvetica-Bold bfs scalefont setfont
+  Show 
+} bind def
+
+/str{
+  false UL
+  false BX
+  fTimes-Roman bfs scalefont setfont
+  Show
+} bind def
+
+/e{
+  false UL
+  true BX
+  fHelvetica-Bold bfs scalefont setfont
+  Show
+} bind def
+
+%%EndResource
+%%EndProlog
+%%BeginSetup
+%%IncludeResource: font Courier
+%%IncludeResource: font Courier-Oblique
+%%IncludeResource: font Courier-Bold
+%%IncludeResource: font Times-Roman
+%%IncludeResource: font Symbol
+%%IncludeResource: font Courier-BoldOblique
+%%BeginResource: encoding ISO-8859-1Encoding
+/ISO-8859-1Encoding [
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/space /exclam /quotedbl /numbersign /dollar /percent /ampersand /quoteright 
+/parenleft /parenright /asterisk /plus /comma /minus /period /slash 
+/zero /one /two /three /four /five /six /seven 
+/eight /nine /colon /semicolon /less /equal /greater /question 
+/at /A /B /C /D /E /F /G 
+/H /I /J /K /L /M /N /O 
+/P /Q /R /S /T /U /V /W 
+/X /Y /Z /bracketleft /backslash /bracketright /asciicircum /underscore 
+/quoteleft /a /b /c /d /e /f /g 
+/h /i /j /k /l /m /n /o 
+/p /q /r /s /t /u /v /w 
+/x /y /z /braceleft /bar /braceright /asciitilde /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/space /exclamdown /cent /sterling /currency /yen /brokenbar /section 
+/dieresis /copyright /ordfeminine /guillemotleft /logicalnot /hyphen /registered /macron 
+/degree /plusminus /twosuperior /threesuperior /acute /mu /paragraph /bullet 
+/cedilla /onesuperior /ordmasculine /guillemotright /onequarter /onehalf /threequarters /questiondown 
+/Agrave /Aacute /Acircumflex /Atilde /Adieresis /Aring /AE /Ccedilla 
+/Egrave /Eacute /Ecircumflex /Edieresis /Igrave /Iacute /Icircumflex /Idieresis 
+/Eth /Ntilde /Ograve /Oacute /Ocircumflex /Otilde /Odieresis /multiply 
+/Oslash /Ugrave /Uacute /Ucircumflex /Udieresis /Yacute /Thorn /germandbls 
+/agrave /aacute /acircumflex /atilde /adieresis /aring /ae /ccedilla 
+/egrave /eacute /ecircumflex /edieresis /igrave /iacute /icircumflex /idieresis 
+/eth /ntilde /ograve /oacute /ocircumflex /otilde /odieresis /divide 
+/oslash /ugrave /uacute /ucircumflex /udieresis /yacute /thorn /ydieresis 
+] def
+%%EndResource
+% Initialize page description variables.
+/sh 612 def
+/sw 792 def
+/llx 24 def
+/urx 768 def
+/ury 588 def
+/lly 24 def
+/#copies 1 def
+/th 15.000000 def
+/fnfs 11 def
+/bfs 7.493857 def
+/cw 4.496314 def
+
+% Dictionary for ISO-8859-1 support
+/iso1dict 8 dict begin
+  /fCourier ISO-8859-1Encoding /Courier reencode_font
+  /fCourier-Bold ISO-8859-1Encoding /Courier-Bold reencode_font
+  /fCourier-BoldOblique ISO-8859-1Encoding /Courier-BoldOblique reencode_font
+  /fCourier-Oblique ISO-8859-1Encoding /Courier-Oblique reencode_font
+  /fHelvetica ISO-8859-1Encoding /Helvetica reencode_font
+  /fHelvetica-Bold ISO-8859-1Encoding /Helvetica-Bold reencode_font
+  /fTimes-Bold ISO-8859-1Encoding /Times-Bold reencode_font
+  /fTimes-Roman ISO-8859-1Encoding /Times-Roman reencode_font
+currentdict end def
+/bgcolor [ 0 0 0 ] def
+/bg false def
+/ul false def
+/bx false def
+% The font for line numbering
+/f# /Helvetica findfont bfs .6 mul scalefont def
+/fSymbol /Symbol findfont def
+/hm fnfs 0.25 mul def
+/pw
+   cw 81.400000 mul
+def
+/ph
+   522.321860 th add
+def
+/pmw urx llx sub pw 2 mul sub 1 div def
+/pmh 0 def
+/v 0 def
+/x [
+  0
+  dup pmw add pw add
+] def
+/y [
+  pmh ph add 0 mul ph add
+  dup
+] def
+/scx sw 2 div def
+/scy sh 2 div def
+/snx urx def
+/sny lly 2 add def
+/dx llx def
+/dy sny def
+/fnx scx def
+/fny dy def
+/lx snx def
+/ly ury fnfs 0.8 mul sub def
+/sx 0 def
+/tab 8 def
+/x0 0 def
+/y0 0 def
+%%EndSetup
+
+%%Page: (1-2) 1
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(#include) K
+(<stdio.h>) p n
+(#include) K
+(<string.h>) p n
+(#include) K
+(<stdlib.h>) p n
+(#include) K
+(") p
+(energy_par.h) str
+(") p n
+(#include) K
+(") p
+(energy_func.h) str
+(") p n
+(#define) K
+( DEBUG 0) p n
+() N
+(double) k
+( GetStackEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l\)) p n
+({) N
+(  ) S
+(int) k
+( ij_trans_index, kl_trans_index, ij_stack_index, kl_stack_index;) p n
+(  ) S
+(double) k
+( energy;) p n
+() N
+(  ij_trans_index = GetIndex\(i,j\);) N
+(  kl_trans_index = GetIndex\(k,l\);) N
+( ) N
+(  ij_stack_index = d1[ij_trans_index];) N
+(  kl_stack_index = d1[kl_trans_index];) N
+() N
+(  energy = stack37[ij_stack_index][kl_stack_index];) N
+() N
+(  ) S
+(if) K
+( \(DEBUG\){) p n
+(    printf\(") S
+(stacking energy: %f\\n) str
+(",energy\);) p n
+(    printf\(") S
+(i %d,j %d,k %d,l %d\\n) str
+(",i,j,k,l\);) p n
+(    printf\(") S
+(ij transeq index: %d, kl transeq index: %d\\n) str
+(", ij_trans_index, kl_trans_index\);) p n
+(    printf\(") S
+(ij stack37 index: %d, kl stack37 index: %d\\n) str
+(", ij_stack_index, kl_stack_index\);) p n
+(    printf\(") S
+(\\n) str
+("\);) p n
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;  ) p n
+(}) N
+() N
+(double) k
+( GetDangleEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l\)) p n
+({) N
+(  ) S
+(int) k
+( ij_trans_index, kl_trans_index, ij_dangle_index, kl_dangle_index;) p n
+(  ) S
+(double) k
+( energy;) p n
+() N
+(  ) S
+(if) K
+( \(i == 0 || j == 0\){) p n
+(    ) S
+(return) K
+( GetDangleEnergy\(l,k,j,i\);) p n
+(  }  ) N
+(  ) S
+(else) K
+({) p n
+(    ij_trans_index = GetIndex\(i,j\);) N
+(    kl_trans_index = GetIndex\(k,l\);) N
+() N
+(    ij_dangle_index = d1[ij_trans_index];) N
+(    kl_dangle_index = d1[kl_trans_index];) N
+() N
+(    printf\(") S
+(%d, %d, %d, %d    %d %d   %d %d\\n) str
+(",i,j,k,l, ij_trans_index, kl_trans_index,) p n
+( ij_dangle_index, kl_dangle_index\);) N
+(    energy = dangle37[ij_dangle_index][kl_dangle_index];) N
+(    ) S
+(return) K
+( energy;) p n
+(  }) N
+(}) N
+() N
+(double) k
+( GetTMMEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l\)) p n
+({) N
+(  ) S
+(int) k
+( ij_trans_index, kl_trans_index, ij_tmm_index, kl_tmm_index;) p n
+(  ) S
+(double) k
+( energy;) p n
+() N
+(  ij_trans_index = GetIndex\(i,j\);) N
+(  kl_trans_index = GetIndex\(k,l\);) N
+() N
+(  ij_tmm_index = d1[ij_trans_index];) N
+(  kl_tmm_index = d1[kl_trans_index];) N
+() N
+(  printf\(") S
+(%d, %d, %d, %d    %d %d   %d %d\\n) str
+(",i,j,k,l, ij_trans_index, kl_trans_index, i) p n
+(j_tmm_index, kl_tmm_index\);) N
+(  energy = TMM[ij_tmm_index][kl_tmm_index];) N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+(energy_func.c) (Page 1/14) (Jan 05, 12 13:16) title
+border
+/v 1 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+() p n
+(double) k
+( GetBulgeEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+(* trans_seq\)) p n
+({) N
+(  ) S
+(int) k
+( diffi, diffj;) p n
+() N
+(  ) S
+(double) k
+( bulge_energy,stack_energy;) p n
+(  bulge_energy = 0.0; ) N
+() N
+(  diffi = k-i;) N
+(  diffj = j-l;) N
+() N
+(  ) S
+(// check for AU or GU penalty at end of helix) c n
+(  ) p
+(if) K
+(\(trans_seq[j] == 12\){) p n
+(    ) S
+(if) K
+( \(trans_seq[i] == 1 || trans_seq[i] == 3\){) p n
+(      bulge_energy+= GUAU_penalty;) N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Added GU/AU penalty: %f\\n) str
+(",GUAU_penalty\);) p n
+(      }) N
+(    }) N
+(  }) N
+() N
+(  ) S
+(if) K
+( \(diffi == 1\){) p n
+(    ) N
+(    ) S
+(// bulge_initiation + special c bulge + stacking energy between i,j and k,l) c n
+(    bulge_energy+=bulge37[diffj-1];) p n
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(Added bulge initiation: size of %d, energy of %f\\n) str
+(",diffj-1,bulge37[diffj-1]\);) p n
+(    }) N
+(    ) S
+(// if bulge just size of 1 base) c n
+(    ) p
+(if) K
+(\(diffj == 2\){) p n
+(      ) S
+(if) K
+(\(trans_seq[l+1] == 7\){ ) p
+(// check to see if its a C) c n
+(        bulge_energy+= C_bulge;) p n
+(        ) S
+(if) K
+(\(DEBUG\){) p n
+(           printf\(") S
+(Added C penalty: %f\\n) str
+(",C_bulge\);) p n
+(        }) N
+(      }) N
+(      stack_energy=GetStackEnergy\(trans_seq[i], trans_seq[j], trans_seq[k], tran) N
+(s_seq[l]\);) N
+(      bulge_energy+=stack_energy;) N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Adding stacking energy for bulge of size 1: %f\\n) str
+(",stack_energy\);) p n
+(      }) N
+(    }) N
+(  }) N
+() N
+(  ) S
+(else) K
+({) p n
+() N
+(    ) S
+(// bulge_initiation + special c bulge + stacking energy between i,j and k,l) c n
+(    bulge_energy+=bulge37[diffi-1];) p n
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(Added bulge initiation: size of %d, energy of %f\\n) str
+(",diffi-1,bulge37[diffi-1]\);) p n
+(    }) N
+(    ) S
+(// if bulge just size of 1 base) c n
+(    ) p
+(if) K
+(\(diffi == 2\){) p n
+(      ) S
+(if) K
+(\(trans_seq[i+1] == 7\){) p
+(// check to see if its a C) c n
+(        bulge_energy+= C_bulge;) p n
+(        ) S
+(if) K
+(\(DEBUG\){) p n
+(           printf\(") S
+(Added C penalty: %f\\n) str
+(",C_bulge\);) p n
+(        }) N
+(      }) N
+(      stack_energy=GetStackEnergy\(trans_seq[i], trans_seq[j], trans_seq[k], tran) N
+(s_seq[l]\);) N
+(      bulge_energy+=stack_energy;) N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Adding stacking energy for bulge of size 1: %f\\n) str
+(",stack_energy\);) p n
+(      }) N
+(    } ) N
+(  }) N
+() N
+(energy_func.c) (Page 2/14) (Jan 05, 12 13:16) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+(energy_func.c) (1/7) (Friday January 06, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (3-4) 2
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(  ) p
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(\\n) str
+("\);   ) p n
+(  }) N
+(  ) S
+(return) K
+( bulge_energy;) p n
+(}) N
+() N
+() N
+(double) k
+( GetInternal11\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+(  ) S
+(double) k
+( energy;) p n
+(  ) S
+(int) k
+( xy_trans_index,xy_index,ij_trans_index,kl_trans_index,ij_index,kl_index,ij) p n
+(kl;) N
+() N
+(  ) S
+(// obtain id of 1x1 loop) c n
+(  xy_trans_index = GetIndex\(trans_seq[i+1],trans_seq[l+1]\);) p n
+(  xy_index = d1[xy_trans_index]; ) N
+(  ) N
+(  ) S
+(// i,j,k,l) c n
+(  ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) p n
+(  kl_trans_index = GetIndex\(trans_seq[k],trans_seq[l]\);) N
+() N
+(  ij_index = d1[ij_trans_index];) N
+(  kl_index = d1[kl_trans_index];  ) N
+() N
+(  ijkl = ij_index * 6 + kl_index;) N
+() N
+(  energy = internal11[ijkl][xy_index];) N
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Internal Loop 1x1 from %d %d to %d %d with %d %d in between\\n\\n) str
+(",i,j,k,l,trans_seq[i) p n
+(+1],trans_seq[l+1]\);) N
+(  }    ) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(double) k
+( GetInternal12\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+() N
+(  ) S
+(int) k
+( ijkl, ij_trans_index, kl_trans_index, ij_index, kl_index;) p n
+(  ) S
+(int) k
+( x,y,xy,xy_index, b, ab , ab_index, xy_ab;) p n
+(  ) N
+(  ) S
+(double) k
+( energy;) p n
+() N
+(  ) S
+(// get i component) c n
+() p n
+(  ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) N
+(  kl_trans_index = GetIndex\(trans_seq[k],trans_seq[l]\);) N
+() N
+(  ij_index = d1[ij_trans_index];) N
+(  kl_index = d1[kl_trans_index];) N
+() N
+(  ijkl = ij_index * 6 + kl_index;) N
+() N
+(  ) S
+(// get j component, only 1 bp missin gon ik side) c n
+(  ) p
+(if) K
+( \(k-i == 2\){) p n
+(    ) N
+(    x = trans_seq[i+1];) N
+(    y = trans_seq[l+2];) N
+(  ) N
+(    xy = GetIndex\(x,y\);) N
+(    xy_index = d1[xy];) N
+(  ) N
+(    b = trans_seq[l+1];) N
+(    ab = GetIndex\(0,b\);) N
+() N
+(    ab_index = d1[ab];) N
+() N
+(    xy_ab = ab_index*16+xy_index;) N
+(energy_func.c) (Page 3/14) (Jan 05, 12 13:16) title
+border
+/v 1 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+() p n
+(    energy = internal12[ijkl][xy_ab];) N
+(  ) N
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(Internal Loop 1x2 with bulge of 2 on j side between %d %d, and %d %d\\n\\n) str
+(",i,j,k,l\);) p n
+(      printf\(") S
+(loop on j side is %d,%d, loop on i side is %d\\n) str
+(",l+1,l+2,i+1\);) p n
+(      printf\(") S
+(Internal Loop energy is: %f\\n\\n) str
+(",energy\);) p n
+(    }) N
+() N
+(  }) N
+() N
+(  ) S
+(else) K
+({) p n
+() N
+(    x = trans_seq[i+1];) N
+(    y = trans_seq[l+2];) N
+() N
+(    xy = GetIndex\(x,y\);) N
+(    xy_index = d1[xy];) N
+(  ) N
+(    b = trans_seq[i+2];) N
+(    ab = GetIndex\(b,0\);) N
+() N
+(    ab_index = d1[ab];) N
+() N
+(    xy_ab = ab_index*16+xy_index;) N
+() N
+(    energy = internal12[ijkl][xy_ab];) N
+() N
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(Internal Loop 1x2 with bulge of 2 on i side between %d %d, and %d %d\\n) str
+(",i,j,k,l\);) p n
+(      printf\(") S
+(loop on i side is %d,%d, loop on j side is %d\\n) str
+(",i+1,i+2,j-1\);) p n
+(      printf\(") S
+(Internal Loop energy is: %f\\n\\n) str
+(",energy\);) p n
+(    }) N
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(double) k
+( GetInternal22\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+(  ) S
+(int) k
+( ij_trans_index, kl_trans_index, ij_index, kl_index, ijkl;) p n
+(  ) S
+(int) k
+( x,y,a,b, xy_trans_index, ab_trans_index, xy_index, ab_index, xyab;) p n
+() N
+(  ) S
+(double) k
+( energy;) p n
+() N
+(  ) S
+(// get i component) c n
+() p n
+(  ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) N
+(  kl_trans_index = GetIndex\(trans_seq[k],trans_seq[l]\);) N
+() N
+(  ij_index = d1[ij_trans_index];) N
+(  kl_index = d1[kl_trans_index];) N
+() N
+(  ijkl = ij_index * 6 + kl_index;) N
+(  ) N
+(  ) S
+(// get j component) c n
+() p n
+(  x = i+1;) N
+(  y = j-1;) N
+(  a = i+2;) N
+(  b = j-2;) N
+(  ) N
+(  xy_trans_index = GetIndex\(trans_seq[x], trans_seq[y]\);) N
+(  ab_trans_index = GetIndex\(trans_seq[a], trans_seq[b]\);) N
+() N
+(  xy_index = d1[xy_trans_index];) N
+(  ab_index = d1[ab_trans_index];) N
+() N
+(  xyab = xy_index *16 + ab_index;) N
+(energy_func.c) (Page 4/14) (Jan 05, 12 13:16) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+(energy_func.c) (2/7) (Friday January 06, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (5-6) 3
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+() p n
+(  energy = internal22[ijkl][xyab];) N
+(  ) N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Internal Loop 2x2 with bulge between %d %d, and %d %d\\n\\n) str
+(",i,j,k,l\);) p n
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(double) k
+( GetInternalEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( k, ) p
+(int) k
+( l, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+() N
+(  ) S
+(int) k
+( diffi,diffj,asym;) p n
+(  ) S
+(int) k
+( x,y, ij_trans_index, xy_trans_index, ij_index, xy_index; ) p n
+(  ) S
+(double) k
+( energy;) p n
+(  ) N
+(  diffi = k-i;) N
+(  diffj = j-l;) N
+(  asym = 0;  ) N
+() N
+(  ) S
+(if) K
+( \(diffj > diffi\){) p n
+(   asym = diffj - diffi - 2;) N
+(  }) N
+(  ) S
+(else) K
+( ) p
+(if) K
+(\(diffi > diffj\){) p n
+(   asym = diffi - diffj - 2;) N
+(  } ) N
+() N
+(  ) S
+(// initiation energy) c n
+(  energy+=internal37[diffi+diffj-2];) p n
+(  ) S
+(if) K
+(\(DEBUG\){ ) p n
+(    printf\(") S
+(Internal Loop between %d %d and %d %d, Initiation Energy: %f\\n) str
+(",i,j,k,l,internal37[di) p n
+(ffi+diffj-2]\);) N
+(  }) N
+() N
+(  ) S
+(// assymetry) c n
+(  energy+=assymetry*\(asym\);) p n
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Internal Loop Assymetry: %d Energy: %f\\n) str
+(", asym, assymetry*\(asym\)\);) p n
+(  }) N
+() N
+(  ) S
+(//mismatch 1) c n
+(  x = i+1;) p n
+(  y = j-1;) N
+() N
+(  ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) N
+(  xy_trans_index = GetIndex\(trans_seq[x],trans_seq[y]\);) N
+() N
+(  ij_index = d1[ij_trans_index];) N
+(  xy_index = d1[xy_trans_index];) N
+() N
+(  energy+=TMM[ij_index][xy_index];) N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Internal Energy 1st TMM: %d, %d, Energy: \\n) str
+(", trans_seq[x], trans_seq[y], TMM[i) p n
+(j_index][xy_index]\);) N
+(  }) N
+() N
+(  ) S
+(// AU, GU closure) c n
+() p n
+(  ) S
+(if) K
+(\(trans_seq[j] == 12\){) p n
+(    ) S
+(if) K
+(\(trans_seq[i] == 1 || trans_seq[i] == 3\){) p n
+(      energy+=GUAU_penalty;) N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Internal Energy GU/AU closure: %f\\n) str
+(",GUAU_penalty\);) p n
+(      }) N
+(    }) N
+(  }) N
+() N
+(  ) S
+(if) K
+(\(trans_seq[l] == 12\){) p n
+(energy_func.c) (Page 5/14) (Jan 05, 12 13:16) title
+border
+/v 1 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    ) p
+(if) K
+(\(trans_seq[k] == 1 || trans_seq[k] == 3\){) p n
+(      energy+=GUAU_penalty;) N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Internal Energy GU/AU opening: %f\\n) str
+(",GUAU_penalty\);) p n
+(      }) N
+(    }) N
+(  }) N
+() N
+() N
+(  printf\(") S
+(Internal Loop, Total Energy: %f\\n\\n) str
+(",energy\);) p n
+() N
+(  ) S
+(return) K
+( energy;) p n
+() N
+(}) N
+() N
+(double) k
+( GetHairpinEnergy\() p
+(int) k
+( i, ) p
+(int) k
+( j, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+(  ) S
+(int) k
+( ij_trans_index, xy_trans_index, ij_index, xy_index, pos, x, y;) p n
+(  ) S
+(double) k
+( energy;) p n
+(    ) N
+(  energy = 0.0; ) N
+( ) N
+(  ) S
+(int) k
+( diff = j-i-1;) p n
+(  ) S
+(int) k
+( Cflag = 1;  ) p n
+() N
+(  ) S
+(if) K
+(\(diff >= 3\){) p n
+(    ) N
+(    ) S
+(// initiation) c n
+(    energy+=hairpin37[diff];) p n
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(Hairpin Loop Inititaion between %d %d: Energy is: %f\\n) str
+(",i,j,hairpin37[diff]\);) p n
+(    }) N
+(  ) N
+(    ) S
+(// mismatch) c n
+(   ) p n
+(    x = i+1;) N
+(    y = j-1;) N
+() N
+(    ij_trans_index = GetIndex\(trans_seq[i],trans_seq[j]\);) N
+(    xy_trans_index = GetIndex\(trans_seq[x],trans_seq[y]\);) N
+() N
+(    ij_index = d1[ij_trans_index];) N
+(    xy_index = d1[xy_trans_index];) N
+() N
+(    energy+=TMM[ij_index][xy_index];) N
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(     printf\(") S
+(Hairpin Loop, TMM between %d, %d and %d, %d: Energy is: %f\\n) str
+(",i,j,i+1,j-1,TMM[ij_) p n
+(index][xy_index]\);) N
+(    }) N
+(  ) N
+(    ) S
+(// uu or ga mismatch) c n
+(    ) p
+(if) K
+(\(xy_trans_index == 28 || xy_trans_index == 10\){) p n
+(      energy+= UUGAmismatch;) N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Haiprin Loop, UU or AG mismatch: %d %d: Energy is %f\\n) str
+(",trans_seq[i+1],trans_) p n
+(seq[j-1],UUGAmismatch\);) N
+(      }) N
+(    } ) N
+(    ) N
+(    ) S
+(// gg mismatch) c n
+(    ) p
+(else) K
+( ) p
+(if) K
+(\(xy_trans_index == 25\){) p n
+(      energy+= GGmismatch;) N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Hairpin Loop, GG mismatch: %d %d: Energy is %f\\n) str
+(",trans_seq[i+1],trans_seq[j) p n
+(-1],GGmismatch\); ) N
+(      }) N
+(    } ) N
+(   ) N
+(    ) S
+(// au/gu closure) c n
+(energy_func.c) (Page 6/14) (Jan 05, 12 13:16) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+(energy_func.c) (3/7) (Friday January 06, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (7-8) 4
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    ) p
+(if) K
+(\(ij_trans_index == 1 || ij_trans_index == 3\){) p n
+(      energy+=AUGUclosure;) N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Hairpin Loop, AU/GU closure: %d %d: Energy is %f\\n) str
+(",trans_seq[i],trans_seq[j]) p n
+(,AUGUclosure\);) N
+(      }) N
+(    }) N
+() N
+(    ) S
+(// check for c loop) c n
+(    ) p
+(for) K
+(\(pos = i+1; pos < j; pos++\){) p n
+(      ) S
+(if) K
+(\(trans_seq[pos] != 7\){) p n
+(        Cflag = 0;) N
+(        ) S
+(break) K
+(;) p n
+(      }) N
+(    }) N
+(      ) N
+(    ) S
+(if) K
+(\(Cflag\){) p n
+(      ) S
+(if) K
+( \(diff == 3\){) p n
+(        energy+= C3loop;) N
+(        ) S
+(if) K
+(\(DEBUG\){) p n
+(          printf\(") S
+(Hairpin Loop, C3 loop: %d %d %d: Energy is %f\\n) str
+(",trans_seq[i+1],trans_seq[) p n
+(i+2],trans_seq[i+3],C3loop\);) N
+(        }) N
+(      }) N
+(      ) S
+(else) K
+({) p n
+(        energy+=\(CloopA*diff+CloopB\);) N
+(        ) S
+(if) K
+(\(DEBUG\){) p n
+(          printf\(") S
+(Hairpin Loop, C loop: %d Energy is %f\\n) str
+(", diff, CloopA*diff+CloopB\);) p n
+(        }) N
+(      }) N
+(    }) N
+(  }) N
+() N
+(  ) S
+(else) K
+({) p n
+(    energy+= hairpin37[diff];) N
+(    ) S
+(if) K
+(\(DEBUG\){) p n
+(      printf\(") S
+(Hairpin Loop Inititaion between %d %d: Energy is: %f\\n) str
+(",i,j,hairpin37[diff]\);) p n
+(    }) N
+(  }) N
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Hairpin Loop Total Energy: %f\\n\\n) str
+(",energy\);) p n
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(double) k
+( GetMultiloopCoaxEnergy\(H* Helix, ) p
+(int) k
+(** children, ) p
+(int) k
+( pos, ) p
+(int) k
+( * bp, ) p
+(int) k
+( *) p n
+( trans_seq\)) N
+({) N
+(  ) S
+(double) k
+( energy,assym;) p n
+() N
+(  ) S
+(int) k
+( num_branch,index,Helix_index,unbp,coax_flag;) p n
+(  ) S
+(int) k
+( i,j,k,l;) p n
+(  ) S
+(double) k
+( tmp_coax_energy, min_coax_energy; ) p n
+() N
+(  unbp = 0;) N
+(  num_branch = 1;) N
+(  coax_flag = 0;) N
+() N
+(  num_branch = children[pos][0];) N
+(  i = Helix[pos].close.i;) N
+(  j = Helix[pos].close.j;) N
+( ) N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Calculating Energy for Multiloop: %d %d: Number of branches: %d\\n) str
+(", Helix[pos].close.i) p n
+(, Helix[pos].close.j,num_branch\);) N
+(    printf\(") S
+(pos %d %d\\n) str
+(",pos,children[pos][0]\);) p n
+(  }) N
+(energy_func.c) (Page 7/14) (Jan 05, 12 13:16) title
+border
+/v 1 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(       ) p n
+(  ) S
+(for) K
+(\(index = 1; index <= num_branch; index++\){) p n
+(    Helix_index = children[pos][index];) N
+(    k = Helix[Helix_index].start.i;) N
+(    l = Helix[Helix_index].start.j;) N
+(    unbp+= k-i-1;) N
+() N
+(    ) S
+(// coaxial stacking) c n
+(  ) p n
+(    ) S
+(if) K
+( \(coax_flag == 1\){) p n
+(      ) S
+(if) K
+(\(k-i-1 <= 1\){) p
+(// coaxially stacked, want to choose minimum) c n
+(        tmp_coax_energy = GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) p n
+(        ) S
+(if) K
+( \(tmp_coax_energy < min_coax_energy\){) p n
+(          min_coax_energy = tmp_coax_energy;) N
+(        }) N
+(      }) N
+(      ) S
+(else) K
+({) p
+(// not coaxially stacked, so take the lowest coaxially stacked energy) c n
+(        energy+=min_coax_energy;) p n
+(        coax_flag = 0;) N
+(      }) N
+(    }) N
+() N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(k-i-1 <= 1\){) p n
+(        coax_flag = 1;) N
+(        min_coax_energy = GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) N
+(    }) N
+(    ) N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[l+1]==-1\){) p n
+(      energy+= GetTMMEnergy\(trans_seq[l],trans_seq[k],trans_seq[l+1],trans_seq[k) N
+(-1]\);) N
+(    }) N
+(   ) N
+(    i = Helix[Helix_index].start.i;) N
+(    j = Helix[Helix_index].start.j;) N
+(  }) N
+() N
+(  k = Helix[pos].close.i;) N
+(  l = Helix[pos].close.j;) N
+(  unbp+= k-i-1;) N
+() N
+(  ) S
+(// coaxial stacking with last branch) c n
+() p n
+(  ) S
+(if) K
+( \(coax_flag == 1\){) p n
+(      ) S
+(if) K
+(\(k-i-1 <= 1\){) p n
+(        tmp_coax_energy = GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) N
+(        ) S
+(if) K
+( \(tmp_coax_energy < min_coax_energy\){) p n
+(          energy += tmp_coax_energy;) N
+(        }) N
+(      }) N
+(  }) N
+() N
+(  ) S
+(else) K
+({) p n
+(      ) S
+(if) K
+(\(k-i-1 <= 1\){) p n
+(        energy+=GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) N
+(      }) N
+(  }) N
+() N
+(  assym = unbp/num_branch;) N
+(  ) S
+(if) K
+( \(assym > 2\){) p n
+(    assym = 2;) N
+(  }) N
+( ) N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(For Multiloop: %d %d, number unbp %d\\n) str
+(", Helix[pos].close.i, Helix[pos].close) p n
+(.j, unbp\);) N
+(  }) N
+() N
+(  ) S
+(// a term in multiloop energy calculation) c n
+(  energy += MultiloopA;) p n
+(energy_func.c) (Page 8/14) (Jan 05, 12 13:16) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+(energy_func.c) (4/7) (Friday January 06, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (9-10) 5
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(  ) p
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Multiloop A value: Energy: %f\\n) str
+(",MultiloopA\);) p n
+(  }) N
+() N
+(  ) S
+(// average assymetry) c n
+(  energy += MultiloopB*assym;) p n
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Average Assymetry: %f Energy %f\\n) str
+(",assym,MultiloopB*assym\);) p n
+(  }) N
+(    ) N
+(  ) S
+(// num_branch ) c n
+(  energy += MultiloopC*num_branch;) p n
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Number of Branches: %d %f Energy %f\\n) str
+(",num_branch,MultiloopC*num_branch\);) p n
+(  }) N
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Multiloop Total Energy: %f\\n\\n) str
+(",energy\);) p n
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(double) k
+( GetExteriorLoopEnergy\(H* Helix, ) p
+(int) k
+(** children, ) p
+(int) k
+( * bp, ) p
+(int) k
+( * trans_seq) p n
+(\)) N
+({) N
+(  ) S
+(double) k
+( energy,assym;) p n
+() N
+(  ) S
+(int) k
+( index,Helix_index,coax_flag,num_branch;) p n
+(  ) S
+(int) k
+( i,j,k,l;) p n
+(  ) S
+(double) k
+( tmp_coax_energy, min_coax_energy;) p n
+() N
+(  energy = 0.0;) N
+() N
+(  coax_flag = 0;) N
+() N
+(  num_branch = children[0][0];) N
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(Calculating Energy for Exterior loop: %d %d: Number of branches: %d\\n) str
+(", Helix[children[) p n
+(0][1]].start.i, Helix[children[0][num_branch]].start.j,num_branch\);) N
+(  }) N
+() N
+(  ) S
+(for) K
+(\(index = 1; index < num_branch; index++\){) p n
+(    Helix_index = children[0][index];) N
+(    i = Helix[Helix_index].start.i;) N
+(    j = Helix[Helix_index].start.j;) N
+(    Helix_index = children[0][index+1]; ) N
+(    k = Helix[Helix_index].start.i;) N
+(    l = Helix[Helix_index].start.j;) N
+() N
+(    ) S
+(// coaxial stacking) c n
+() p n
+(    ) S
+(if) K
+( \(coax_flag == 1\){) p n
+(      ) S
+(if) K
+(\(k-i-1 <= 1\){) p
+(// coaxially stacked, want to choose minimum) c n
+(        tmp_coax_energy = GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) p n
+(        ) S
+(if) K
+( \(tmp_coax_energy < min_coax_energy\){) p n
+(          min_coax_energy = tmp_coax_energy;) N
+(        }) N
+(      }) N
+(      ) S
+(else) K
+({) p
+(// not coaxially stacked, so take the lowest coaxially stacked energy) c n
+(        energy+=min_coax_energy;) p n
+(        coax_flag = 0;) N
+(      }) N
+(    }) N
+() N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(k-i-1 <= 1\){) p n
+(        coax_flag = 1;) N
+(        min_coax_energy = GetCoaxEnergy\(i,j,k,l,bp,trans_seq\);) N
+(energy_func.c) (Page 9/14) (Jan 05, 12 13:16) title
+border
+/v 1 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    }) p n
+(    ) N
+(    ) S
+(// add T.M.M) c n
+(    ) p
+(else) K
+( ) p
+(if) K
+( \(index == 1 && bp[j+1] == -1\){) p n
+(      energy+= GetTMMEnergy\(trans_seq[j],trans_seq[i],trans_seq[j+1],trans_seq[i) N
+(-1]\); ) N
+(    }) N
+() N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[l+1] == -1\){) p n
+(      energy+= GetTMMEnergy\(trans_seq[l],trans_seq[k],trans_seq[l+1],trans_seq[k) N
+(-1]\);) N
+(    }) N
+() N
+(  }) N
+() N
+(  ) S
+(if) K
+(\(DEBUG\){) p n
+(    printf\(") S
+(For Exterior Loop: %d %d the energy is: %f) str
+(", Helix[children[0][1]].start.i, Heli) p n
+(x[children[0][num_branch]].start.j, energy\);) N
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+() N
+(double) k
+( GetCoaxEnergy\() p
+(int) k
+( i,) p
+(int) k
+( j,) p
+(int) k
+( k,) p
+(int) k
+( l,) p
+(int) k
+( *bp, ) p
+(int) k
+( * trans_seq\){) p n
+() N
+(  ) S
+(/* if basepair mediated coaxial stacking is TMM plus discontinuity penalty) c n
+() N
+(  /* if flush coaxial stacking treat as stacking basepairs) N
+(     must compare with having just dangles */) N
+() p n
+() N
+(  ) S
+(double) k
+( energy = 0.0;) p n
+(  ) S
+(double) k
+( tmp_energy, dangle_energy, coax_energy;) p n
+() N
+(  ) S
+(if) K
+( \(k-i-1 == 1\){) p
+(// unpaired bp in between) c n
+() p n
+(    ) S
+(if) K
+(\(bp[l+1] == -1\){) p
+(// unpaired nuc in l+1 pos) c n
+(      energy = GetTMMEnergy\(trans_seq[l],trans_seq[k],trans_seq[l+1],trans_seq[k) p n
+(-1]\);) S
+(// l is the 5 prime end so look at it like l,k with l+1,k-1 stacked on) c n
+(      energy+= DisconPenalty; ) p n
+(    }) N
+() N
+(    ) S
+(if) K
+(\(bp[j-1] == -1\){) p
+(// unpaired nuc in j-1 pos) c n
+(      tmp_energy = GetTMMEnergy\(trans_seq[i],trans_seq[j],trans_seq[i+1],trans_s) p n
+(eq[j-1]\) + DisconPenalty;) N
+(      ) S
+(if) K
+( \(tmp_energy < energy\){) p n
+(        energy = tmp_energy;) N
+(      } ) N
+(    }) N
+(  }) N
+() N
+(  ) S
+(else) K
+( ) p
+(if) K
+(\(k-i-1 == 0\){ ) p
+(// need to compare coaxial energy with dangle energy) c n
+(    coax_energy = GetStackEnergy\(trans_seq[i],trans_seq[j],trans_seq[k],trans_se) p n
+(q[l]\);   ) N
+(    ) S
+(if) K
+(\(bp[j-1] == -1 && bp[l+1] == -1\){) p n
+(      dangle_energy = GetDangleEnergy\(trans_seq[i],trans_seq[j],0,trans_seq[j-1]) N
+(\);  ) S
+(// 3 prime dangle) c n
+(      dangle_energy += GetDangleEnergy\(trans_seq[k],trans_seq[l],0,trans_seq[l+1) p n
+(]\); ) S
+(// 3 prime dangle ) c n
+(    } ) p n
+(  ) N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[j-1] == -1\){) p n
+(      dangle_energy = GetDangleEnergy\(trans_seq[i],trans_seq[j],0,trans_seq[j-1]) N
+(\);  ) S
+(// 3 prime dangle) c n
+(    }) p n
+(    ) N
+(    ) S
+(else) K
+( ) p
+(if) K
+(\(bp[l+1] == -1\){) p n
+(      dangle_energy += GetDangleEnergy\(trans_seq[k],trans_seq[l],0,trans_seq[l+1) N
+(energy_func.c) (Page 10/14) (Jan 05, 12 13:16) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+(energy_func.c) (5/7) (Friday January 06, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (11-12) 6
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(]\); ) p
+(// 3 prime dangle) c n
+(    }) p n
+() N
+(    ) S
+(if) K
+(\(coax_energy <= dangle_energy\){) p n
+(      energy = coax_energy;) N
+(    }) N
+() N
+(    ) S
+(else) K
+({) p n
+(      energy = dangle_energy;) N
+(    }) N
+() N
+(  }) N
+() N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+() N
+(double) k
+( GetStructureEnergy\() p
+(int) k
+( * trans_seq, ) p
+(char) k
+( * secstr\){) p n
+() N
+(  ) S
+(double) k
+( energy;) p n
+(  energy = 0.0; ) N
+(  ) S
+(int) k
+( pos,i,j,k,l,k_index,index,len, par_index, par_j,par_ij,child_index,diffi,d) p n
+(iffj,flag;) N
+(  ) S
+(int) k
+( * bp;) p
+(// ordered bp list) c n
+(  ) p
+(int) k
+( ** BooleanMatrix;) p
+(// need to generate Boolean Matrix to check bp in between) c n
+( i,j) N
+() p n
+(  flag = 0;  ) N
+() N
+(  len = strlen\(secstr\);) N
+(  bp = GetBPList\(secstr,len\);) N
+() N
+(  BooleanMatrix = Allocate2Dmatrix\(len,len\);) N
+(  BooleanMatrix = BPBetweenBool\(BooleanMatrix,bp,len\);) N
+() N
+(  index = 1;) N
+() N
+(  ) S
+(// helix, stores start and closing BP) c n
+(  H * Helix;  ) p n
+(  Helix = \(H*\)\(malloc\(MAXBP * ) S
+(sizeof) K
+(\(H\)\)\);) p n
+(   ) N
+(  ) S
+(// parent) c n
+() p n
+(  ) S
+(int) k
+( par[MAXBP];) p n
+(  ) N
+(  ) S
+(// children) c n
+(  ) p n
+(  ) S
+(int) k
+( ** children;) p n
+(  children = Allocate2Dmatrix\(MAXBP, MAXCHILDREN\);) N
+(  ) S
+(for) K
+( \(pos = 0; pos < MAXBP; pos++\){) p n
+(    children[pos][0] = 0;) S
+(// want to start 1 over from 0, 0 is where you store in) c n
+(dex) N
+(  }) p n
+() N
+(  ) S
+(// initialize helix) c n
+(  ) p
+(for) K
+(\(pos = 0; pos < len; pos++\){) p n
+(    ) S
+(if) K
+(\(bp[pos] != -1\){) p n
+(      i = pos;) N
+(      j = bp[pos];) N
+(      ) S
+(break) K
+(;) p n
+(    }) N
+(  }) N
+() N
+(  Helix[index].start.i = i;) N
+(  Helix[index].start.j = j;) N
+() N
+() N
+(  ) S
+(// initialize parent) c n
+(  par[1] = 0;) p n
+(  ) S
+(int) k
+( lasti = i;) p n
+(energy_func.c) (Page 11/14) (Jan 05, 12 13:16) title
+border
+/v 1 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(  ) p
+(int) k
+( lastj = j;) p n
+() N
+(  ) S
+(//iterate through bps) c n
+() p n
+(  ) S
+(for) K
+(\(pos = i+1; pos < len; pos++\){) p n
+(    ) S
+(//find i,j,k,l) c n
+(   ) p n
+(    i = lasti;) N
+(    j = lastj;) N
+( ) N
+(    ) S
+(if) K
+(\(bp[pos] != -1 && bp[pos] > pos\){) p n
+(      k = pos;) N
+(      l = bp[pos];) N
+(  ) N
+(      lasti = k;) N
+(      lastj = l;) N
+() N
+(      ) S
+(if) K
+(\(DEBUG\){) p n
+(        printf\(") S
+(Now looking at %d, %d and %d, %d\\n) str
+(",i,j,k,l\);) p n
+(      }) N
+() N
+(      ) S
+(// get space inbetween i and k and l and j, for loop energy calculation) c n
+(      diffi = k-i;) p n
+(      diffj = j-l;) N
+() N
+(      ) S
+(// check if i,j is closing bp of stem so no bases in between) c n
+(      ) p
+(if) K
+(\(BooleanMatrix[i][j] == 0\){) p n
+( ) N
+(          ) S
+(// close helix) c n
+(          Helix[index].close.i = i;) p n
+(          Helix[index].close.j = j; ) N
+(    ) N
+(          ) S
+(// open a new helix) c n
+(          Helix[index+1].start.i = k;) p n
+(          Helix[index+1].start.j = l;) N
+(    ) N
+(          ) S
+(// get parent helix, need to get j of start of parent helix. ) c n
+(          par_index = par[index];) p n
+(          par_j = Helix[par_index].start.j;) N
+() N
+(          ) S
+(//parent of k,l is parent of parent of i,j - closing a multiloop) c n
+(          ) p
+(if) K
+(\(k > par_j\){) p n
+(            ) S
+(if) K
+(\(DEBUG\){) p n
+(              printf\(") S
+(closing last branch of multiloop with %d %d %d %d\\n) str
+(",i,j,k,par_j\);) p n
+(            }) N
+(            ) N
+(            ) S
+(// move up a level to get parent) c n
+(            par_ij = par[index];) p n
+(            par[index+1] = par[par_ij];) N
+(            energy+= GetHairpinEnergy\(i,j,trans_seq\);) N
+(            ) S
+(if) K
+(\(DEBUG\){) p n
+(              printf\(") S
+(ENERGY is: %f\\n) str
+(", energy\); ) p n
+(            }) N
+() N
+(            ) S
+(//add child to parent) c n
+(            children[par[index+1]][0]++;) p
+(//increase number of branches by 1;  ) c n
+(            child_index = children[par[index+1]][0];) p n
+(            children[par[index+1]][child_index] = index+1;) N
+(            ) S
+(if) K
+(\(DEBUG\){) p n
+(              printf\(") S
+(Adding child %d to parent %d\\n) str
+(",index+1,par[index+1]\);) p n
+(            }) N
+(            energy+= GetMultiloopCoaxEnergy\(Helix, children, par[index], bp, tra) N
+(ns_seq\);) N
+(            index++;) N
+(          }) N
+(  ) N
+(          ) S
+(else) K
+({) p n
+(  ) N
+(            printf\(") S
+(closing loop of %d, %d\\n) str
+(",i,j\);) p n
+(energy_func.c) (Page 12/14) (Jan 05, 12 13:16) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+(energy_func.c) (6/7) (Friday January 06, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (13-14) 7
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(    ) p n
+(            ) S
+(// parent doesn't change) c n
+(            par[index+1] = par[index];) p n
+(            energy+= GetHairpinEnergy\(i,j,trans_seq\);) N
+(            printf\(") S
+(ENERGY is: %f\\n) str
+(", energy\); ) p n
+() N
+(            ) S
+(//add child to parent ) c n
+(            children[par[index+1]][0]++;) p
+(// increase number of branches by 1 ) c n
+(            child_index = children[par[index+1]][0];) p n
+(            children[par[index+1]][child_index] = index+1;) N
+(            printf\(") S
+(Adding child %d to parent %d\\n) str
+(",index+1,par[index+1]\);) p n
+(            index++;) N
+(          } ) N
+(      ) N
+(      }) N
+() N
+(      ) S
+(// opening up a multiloop) c n
+(      ) p
+(else) K
+( ) p
+(if) K
+(\(BooleanMatrix[l][j] == 1\){) p n
+(      ) N
+(          printf\(") S
+(Opening a multiloop with %d %d, starting bp of 1st branch is %d %d\\n) str
+(",i,j,k,l\);) p n
+() N
+(          Helix[index].close.i = i;) N
+(          Helix[index].close.j = j;) N
+() N
+(          Helix[index+1].start.i = k;) N
+(          Helix[index+1].start.j = l;) N
+() N
+(          par[index+1] = index;) N
+(   ) N
+() N
+(          children[index][0]++;) S
+(// increase number of branches by 1   ) c n
+(          child_index = children[index][0];) p n
+(          children[index][child_index] = index+1;) N
+(          printf\(") S
+(Adding child %d to parent %d\\n) str
+(",index+1,index\);) p n
+(    ) N
+(          index++;) N
+(      }  ) N
+( ) N
+(      ) S
+(else) K
+( {) p n
+(         ) N
+(          ) S
+(if) K
+(\(diffi == 1 && diffj == 1\){) p n
+(            printf\(") S
+(stacking energy between indexes %d, %d and %d, %d\\n) str
+(",i,j,k,l\);) p n
+(            energy+=GetStackEnergy\(trans_seq[i],trans_seq[j],trans_seq[k],trans_) N
+(seq[l]\);) N
+(            printf\(") S
+(ENERGY is: %f\\n) str
+(", energy\);) p n
+(          }) N
+(   ) N
+(          ) S
+(else) K
+({) p n
+(          ) N
+(            ) S
+(if) K
+(\(diffi == 1 && diffj > 1\){) p n
+(              printf\(") S
+(bulge energy on j side between %d,%d and %d,%d\\n) str
+(",i,j,k,l\); ) p n
+(              energy+= GetBulgeEnergy\(i, j, k, l,trans_seq\);) N
+(              printf\(") S
+(ENERGY is: %f\\n) str
+(", energy\);) p n
+(            }) N
+() N
+(            ) S
+(else) K
+( ) p
+(if) K
+(\(diffi > 1 && diffj == 1\){) p n
+(              printf\(") S
+(bulge energy on i side between %d,%d and %d,%d\\n) str
+(",i,j,k,l\);) p n
+(              energy+= GetBulgeEnergy\(i, j, k, l,trans_seq\);) N
+(              printf\(") S
+(ENERGY is: %f\\n) str
+(", energy\);) p n
+(            }) N
+( ) N
+(            ) S
+(else) K
+( ) p
+(if) K
+(\(diffi == 2 && diffj == 2\){) p n
+(              printf\(") S
+(1x1 internal loop between %d,%d and %d,%d\\n) str
+(",i,j,k,l\);) p n
+(              energy+= GetInternal11\(i,j,k,l,trans_seq\);) N
+(              printf\(") S
+(ENERGY is: %f\\n) str
+(", energy\);) p n
+(            }) N
+() N
+(            ) S
+(else) K
+( ) p
+(if) K
+(\(diffi == 2 && diffj == 3\){) p n
+(              printf\(") S
+(1x2 internal loop, 2 on j between %d,%d and %d,%d\\n) str
+(",i,j,k,l\);) p n
+(energy_func.c) (Page 13/14) (Jan 05, 12 13:16) title
+border
+/v 1 store
+/x0 x v get 3.147420 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(              energy+= GetInternal12\(i,j,k,l,trans_seq\);) p n
+(              printf\(") S
+(ENERGY is: %f\\n) str
+(", energy\);) p n
+(            }) N
+() N
+(            ) S
+(else) K
+( ) p
+(if) K
+(\(diffi == 3 && diffj == 2\){) p n
+(              printf\(") S
+(1x2 internal loop, 2 on i between %d,%d and %d,%d\\n) str
+(",i,j,k,l\);) p n
+(              energy+= GetInternal12\(i,j,k,l,trans_seq\);) N
+(              printf\(") S
+(ENERGY is: %f\\n) str
+(", energy\);) p n
+(            }) N
+() N
+(            ) S
+(else) K
+( ) p
+(if) K
+(\(diffi == 3 && diffj == 3\){) p n
+(              printf\(") S
+(2x2 internal loop between %d,%d and %d,%d\\n) str
+(",i,j,k,l\);) p n
+(              energy+= GetInternal22\(i,j,k,l,trans_seq\);) N
+(              printf\(") S
+(ENERGY is: %f\\n) str
+(", energy\);) p n
+(            }) N
+( ) N
+(            ) S
+(else) K
+({) p n
+(              printf\(") S
+(Internal loop between %d,%d and %d,%d\\n) str
+(",i,j,k,l\);) p n
+(              energy+=GetInternalEnergy\(i,j,k,l,trans_seq\);) N
+(              printf\(") S
+(ENERGY is: %f\\n) str
+(", energy\);) p n
+(            }) N
+() N
+(          }  ) N
+(      }) N
+(    }) N
+(  }) N
+() N
+() N
+(  ) S
+(// special case for the closing bp of very last branch, not accounted for in m) c n
+(ain loop) N
+() p n
+(  ) S
+(if) K
+(\(BooleanMatrix[i][j] == 0\){) p n
+(    ) S
+(// close helix) c n
+(    Helix[index].close.i = i;) p n
+(    Helix[index].close.j = j;) N
+() N
+(    printf\(") S
+(closing loop of %d, %d\\n) str
+(",i,j\);) p n
+(    ) S
+(// parent doesn't change) c n
+(    energy+= GetHairpinEnergy\(i,j,trans_seq\);) p n
+() N
+(    ) S
+(//add child to parent ) c n
+(    children[par[index]][0]++;) p
+(// increase number of branches by 1 ) c n
+(    child_index = children[par[index]][0];) p n
+(    children[par[index]][child_index] = index;) N
+(    printf\(") S
+(Adding child %d to parent %d\\n) str
+(",index,par[index]\);) p n
+(  } ) N
+(  ) N
+(  energy+=GetExteriorLoopEnergy\(Helix, children, bp, trans_seq\);) S
+(//exterior loop) c n
+( ) p n
+(  printf\(") S
+(ENERGY is: %f\\n) str
+(", energy\); ) p n
+(  ) N
+(  ) S
+(//free) c n
+() p n
+(  free\(Helix\);) N
+(  ) S
+(for) K
+(\(i = 0; i < len; i++\){) p n
+(    free\(BooleanMatrix[i]\);) N
+(  }) N
+(  free\(BooleanMatrix\);) N
+(  ) S
+(for) K
+(\(i = 0; i < MAXBP; i++\){) p n
+(    free\(children[i]\);) N
+(  }) N
+(  free\(children\);) N
+(  free\(bp\);) N
+(  ) S
+(return) K
+( energy;) p n
+(}) N
+(energy_func.c) (Page 14/14) (Jan 05, 12 13:16) title
+border
+grestore
+(Printed by Vinodh Mechery) rhead
+(energy_func.c) (7/7) (Friday January 06, 2012) footer
+end % of iso1dict
+pagesave restore
+showpage
+
+%%Trailer
+end
+%%EOF
