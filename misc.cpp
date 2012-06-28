@@ -4,7 +4,7 @@
 #include"misc.h"
 #include"ProgConst.h"
 
-#define DEBUG 0 
+extern int DEBUG;
 
 int d2[13] = {0,13,0,14,0,0,0,15,0,0,0,0,16};
 

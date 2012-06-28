@@ -2,7 +2,6 @@
 #include "DataStruct.h"
 /* declaration of functions for initializaing, transformation */
 
-extern int DEBUG;
 double GetTripletEnergy(int i, int j, int k, int l, int u, int v, int* trans_seq); // i, j, k, l, u, v are the values within the sequence to integer, transformation array
 double GetILEnergy(int i, int j, int k, int l, int *trans_seq);
 double GetStackEnergy(int i, int j, int k, int l, int* trans_seq); // i, j, k, l are the values within the sequence to integer, transformation array

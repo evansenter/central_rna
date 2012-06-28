@@ -1,64 +1,61 @@
+CFLAGS  = -c -O3
+LDFLAGS = -lfftw3 -L.
+BINDIR  = /usr/local/bin # Change this to the BINDIR
+CC      = g++
+
 all: TripletPF
 
-#MatthewsRNAeval: MatthewsRNAeval.o energy_func.o energy_par.o misc.o
-#	gcc -o MatthewsRNAeval MatthewsRNAeval.o energy_func.o energy_par.o misc.o -lm 
-
 TripletPF: TripletPF.o tpfunc.o tmfe.o tsampling.o tcalculateProbs1.o tcalculateProbs2.o pfunc.o mfe.o sampling.o calculateProbs1.o calculateProbs2.o energy_func.o energy_par.o enthalpy_par.o misc.o random.o
-	g++ -o TripletPF TripletPF.o tpfunc.o tmfe.o tsampling.o tcalculateProbs1.o tcalculateProbs2.o pfunc.o mfe.o sampling.o calculateProbs1.o calculateProbs2.o energy_func.o energy_par.o enthalpy_par.o misc.o random.o -lm -g
-
-#MatthewsRNAeval.o: MatthewsRNAeval.cpp
-#	gcc -c MatthewsRNAeval.cpp
+	$(CC) -o TripletPF TripletPF.o tpfunc.o tmfe.o tsampling.o tcalculateProbs1.o tcalculateProbs2.o pfunc.o mfe.o sampling.o calculateProbs1.o calculateProbs2.o energy_func.o energy_par.o enthalpy_par.o misc.o random.o -lm -g
 
 TripletPF.o: TripletPF.cpp
-	g++ -c TripletPF.cpp -lm -g
+	$(CC) -c TripletPF.cpp -g
 
 tpfunc.o: tpfunc.cpp
-	g++ -c tpfunc.cpp -lm -g
+	$(CC) -c tpfunc.cpp -g
 
 tmfe.o: tmfe.cpp
-	g++ -c tmfe.cpp -lm -g
+	$(CC) -c tmfe.cpp -g
 
 tsampling.o: tsampling.cpp
-	g++ -c tsampling.cpp -lm -g
+	$(CC) -c tsampling.cpp -g
 
 tcalculateProbs1.o: tcalculateProbs1.cpp
-	g++ -c tcalculateProbs1.cpp -lm -g
+	$(CC) -c tcalculateProbs1.cpp -g
 
 tcalculateProbs2.o: tcalculateProbs2.cpp
-	g++ -c tcalculateProbs2.cpp -lm -g
+	$(CC) -c tcalculateProbs2.cpp -g
 
 pfunc.o: pfunc.cpp
-	g++ -c pfunc.cpp -lm -g
+	$(CC) -c pfunc.cpp -g
 
 mfe.o: mfe.cpp
-	g++ -c mfe.cpp -lm -g
+	$(CC) -c mfe.cpp -g
 
 sampling.o: sampling.cpp
-	g++ -c sampling.cpp -lm -g
+	$(CC) -c sampling.cpp -g
 
 calculateProbs1.o: calculateProbs1.cpp
-	g++ -c calculateProbs1.cpp -lm -g
+	$(CC) -c calculateProbs1.cpp -g
 
 calculateProbs2.o: calculateProbs2.cpp
-	g++ -c calculateProbs2.cpp -lm -g
-
-#tcalculateProbs3.o: tcalculateProbs3.cpp
-#	gcc -c tcalculateProbs3.cpp -lm -g
+	$(CC) -c calculateProbs2.cpp -g
 
 energy_func.o: energy_func.cpp
-	g++ -c energy_func.cpp -g -lm
+	$(CC) -c energy_func.cpp -g
 
 energy_par.o: energy_par.cpp
-	g++ -c energy_par.cpp
+	$(CC) -c energy_par.cpp
 
 enthalpy_par.o: enthalpy_par.cpp
-	g++ -c enthalpy_par.cpp
+	$(CC) -c enthalpy_par.cpp
 
 misc.o: misc.cpp
-	g++ -c misc.cpp
+	$(CC) -c misc.cpp
 
 random.o: random.cpp
-	g++ -c random.cpp -lm
+	$(CC) -c random.cpp
 
 clean:
 	rm -rf *o TripletPF
+# DO NOT DELETE

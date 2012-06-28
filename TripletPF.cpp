@@ -26,6 +26,7 @@
    parameters from Mattews 2004
 */
 
+int DEBUG;
 
 //------------Time functions
 static struct rusage res;
