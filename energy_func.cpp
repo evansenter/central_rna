@@ -6,7 +6,7 @@
 #include"energy_func.h"
 #include"enthalpy_par.h"
 #include"energy_constant.h"
-DEBUG = 0;
+#define DEBUG 0
 /* Energy functions according to Matthews Rules located at
    http://rna.urmc.rochester.edu/NNDB/
 

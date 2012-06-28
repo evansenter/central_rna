@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
+#include "mfe.h"
 #include"energy_par.h"
 #include"energy_func.h"
 #include"tmfe.h"

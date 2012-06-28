@@ -14,7 +14,7 @@ int GetIndex(int i, int j); // returns value in  d1 through index from formula (
 void PrintStr(char *ptr); // prints string given ptr, end character must be \0
 void PrintInt(int *ptr, int len);
 int CountChar(char * str, char c);// counts the number of char c in str
-int **Allocate2DMatrix(int a, int b);// Allocate 2D Matrix of axb
+int **Allocate2Dmatrix(int a, int b);// Allocate 2D Matrix of axb
 double **Allocate2DMatrixDouble(int a, int b);// Allocate 2D double Matrix of axb
 int **BPBetweenBool(int** Matrix, int * bp, int len);//fills in matrix such that matrix[i][j] returns 1 if BP between i,j, otherwise 0
 int * GetBPList(char * str,int len);
