@@ -1,5 +1,5 @@
 CFLAGS  = -Wall -c -O3
-LDFLAGS = -lfftw3 -L.
+LDFLAGS = -lfftw3
 CC      = g++
 
 all: TripletPF
