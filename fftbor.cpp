@@ -13,8 +13,8 @@
 #define PRECISION 4
 #define FFTW_REAL 0
 #define FFTW_IMAG 1
-#define STRUCTURE_COUNT 1
-#define FFTBOR_DEBUG 1
+#define STRUCTURE_COUNT 0
+#define FFTBOR_DEBUG 0
 #define WORKING_COUNTER 1
 
 extern int DEBUG;
@@ -210,7 +210,9 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
     rootsOfUnity[root][1] = dcomplex(rootsOfUnity[i][1].real(), -rootsOfUnity[i][1].imag());
   }
   
-  printf("Number of structures: %.0f\n", Z[length][1].real());
+  if (STRUCTURE_COUNT) {
+    printf("Number of structures: %.0f\n", Z[length][1].real());
+  }
   
   solveSystem(length, rootsOfUnity, coefficients, scalingFactor);
 }
@@ -255,7 +257,7 @@ void solveSystem(int length, dcomplex **rootsOfUnity, double *coefficients, doub
   std::cout << "Sum: " << sum << std::endl;
 }
 
-int canPair(int a, int b) {
+inline int canPair(int a, int b) {
   // Takes the integer representation of two nucleotides.
   if (DEBUG) {
     if (!((a == 1 || a == 3 || a == 7 || a == 12) && (b == 1 || b == 3 || b == 7 || b == 12))) {
@@ -266,11 +268,11 @@ int canPair(int a, int b) {
   return d1[GetIndex(a, b)] < 6;
 }
 
-int jPairedTo(int i, int j, int *basePairs) {
+inline int jPairedTo(int i, int j, int *basePairs) {
   return basePairs[i] == j ? -1 : 1;
 }
 
-int jPairedIn(int i, int j, int *basePairs) {
+inline int jPairedIn(int i, int j, int *basePairs) {
   return basePairs[j] >= i && basePairs[j] < j ? 1 : 0;
 }
 
@@ -300,7 +302,7 @@ int bpBetween(int i, int j, int *basePairs) {
   return n;
 }
 
-double GetInteriorStackingAndBulgeEnergy(int i, int j, int k, int l, int *intSequence) {
+inline double GetInteriorStackingAndBulgeEnergy(int i, int j, int k, int l, int *intSequence) {
   if (k == i + 1 && l == j - 1) {
     // Stacking.
     return GetStackEnergy(i, j, k, l, intSequence);
