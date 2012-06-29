@@ -1,5 +1,7 @@
 #include "fftbor.h"
 #include "misc.h"
+#include "energy_func.h"
+#include "energy_par.h"
 #include <stdio.h>
 #include <iostream>
 #include <fftw3.h>
@@ -30,7 +32,8 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
   dcomplex **rootsOfUnity = new dcomplex*[length + 1];
   double    *coefficients = new double[length + 1];
   
-  RT        = 0.0019872370936902486 * (temperature + 273.15) * 100; // 0.01 * (kcal K)/mol
+  // RT        = 0.0019872370936902486 * (temperature + 273.15) * 100; // 0.01 * (kcal K)/mol
+  RT        = R * T;
   basePairs = GetBPList(structure, length + 1);
   bpCount   = numBasePairs(basePairs, length);
   
@@ -73,7 +76,7 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
           // Solve ZB 
           // ****************************************************************************
           // In a hairpin, [i + 1, j - 1] unpaired.
-          energy    = 0;// hairpinloop(i, j, PN[seq[i]][seq[j]], seq, a);
+          energy    = GetHairpinEnergy(i, j, intSequence);
           delta     = bpCount[i][j] + jPairedTo(i, j, basePairs);
           ZB[i][j] += pow(x, delta) * exp(-energy / RT);
   
@@ -86,7 +89,7 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
             for (l = MAX(k + MIN_PAIR_DIST + 1, j - MAX_INTERIOR_DIST - 1); l < j; ++l) {
               if (canPair(intSequence[k], intSequence[l])) {
                  // In interior loop / bulge / stack with (i, j) and (k, l), (i + 1, k - 1) and (l + 1, j - 1) are all unpaired.
-                 energy    = 0;// interiorloop(i, j, k, l, PN[seq[i]][seq[j]], PN[seq[l]][seq[k]], seq);
+                 energy    = GetInteriorStackingAndBulgeEnergy(i, j, k, l, intSequence);
                  delta     = bpCount[i][j] - bpCount[k][l] + jPairedTo(i, j, basePairs);
                  ZB[i][j] += (ZB[k][l] * pow(x, delta) * exp(-energy / RT));
   
@@ -96,7 +99,7 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
   
                 if (k > i + MIN_PAIR_DIST + 2) {
                   // If (i, j) is the closing b.p. of a multiloop, and (k, l) is the rightmost base pair, there is at least one hairpin between (i + 1, k - 1).
-                  energy    = 0;// multiloop_closing(i, j, k, l, PN[seq[j]][seq[i]], PN[seq[k]][seq[l]], seq);
+                  energy    = MultiloopA + 2 * MultiloopB + MultiloopC * (j - l - 1);
                   delta     = bpCount[i][j] - bpCount[i + 1][k - 1] - bpCount[k][l] + jPairedTo(i, j, basePairs);
                   ZB[i][j] += ZM[i + 1][k - 1] * ZB[k][l] * pow(x, delta) * exp(-energy / RT);
   
@@ -123,7 +126,7 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
         for (k = i; k < j - MIN_PAIR_DIST; ++k) {
           if (canPair(intSequence[k], intSequence[j])) {
             // Only one stem.
-            energy    = 0;// P->MLintern[PN[seq[k]][seq[j]]] + P->MLbase * (k - i);
+            energy    = MultiloopB + MultiloopC * (k - i);
             delta     = bpCount[i][j] - bpCount[k][j];
             ZM[i][j] += ZB[k][j] * pow(x, delta) * exp(-energy / RT);
   
@@ -133,7 +136,8 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
   
             // More than one stem.
             if (k > i + MIN_PAIR_DIST + 2) {
-              energy    = 0;// P->MLintern[PN[seq[k]][seq[j]]];
+              // I believe this needs a MultiloopC penalty as well, but since it's set to 0 it's not a big deal.
+              energy    = MultiloopB;
               delta     = bpCount[i][j] - bpCount[i][k - 1] - bpCount[k][j];
               ZM[i][j] += ZM[i][k - 1] * ZB[k][j] * pow(x, delta) * exp(-energy / RT);
   
@@ -157,7 +161,8 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
         for (k = i; k < j - MIN_PAIR_DIST; ++k) { 
           // (k, j) is the rightmost base pair in (i, j).
           if (canPair(intSequence[k], intSequence[j])) {
-            energy = 0;// PN[seq[k]][seq[j]] > 2 ? TerminalAU : 0;
+            // if d1[k, j] == 2 or 3, it's not an AU or GU pair.
+            energy = d1[GetIndex(intSequence[k], intSequence[j])] == 2 || d1[GetIndex(intSequence[k], intSequence[j])] == 3 ? 0 : GUAU_penalty;
             
             if (k == i) {
               delta    = bpCount[i][j] - bpCount[k][j];
@@ -293,4 +298,20 @@ int bpBetween(int i, int j, int *basePairs) {
   }
   
   return n;
+}
+
+double GetInteriorStackingAndBulgeEnergy(int i, int j, int k, int l, int *intSequence) {
+  if (k == i + 1 && l == j - 1) {
+    // Stacking.
+    return GetStackEnergy(i, j, k, l, intSequence);
+  } else if (l == j - 1) {
+    // Left bulge.
+    return GetLeftBulgeEnergy(i, j, k, intSequence);
+  } else if (k == i + 1) {
+    // Right bulge.
+    return GetRightBulgeEnergy(i, j, l, intSequence);
+  } else {
+    // Interior loop.
+    return GetInternalEnergy(i, j, k, l, intSequence);
+  }
 }

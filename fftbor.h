@@ -9,3 +9,4 @@ int jPairedTo(int i, int j, int *basePairs);
 int jPairedIn(int i, int j, int *basePairs);
 int **numBasePairs(int *basePairs, int length);
 int bpBetween(int i, int j, int *basePairs);
+double GetInteriorStackingAndBulgeEnergy(int i, int j, int k, int l, int *intSequence);
