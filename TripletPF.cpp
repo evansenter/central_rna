@@ -1,8 +1,9 @@
-#include<stdlib.h>
-#include<stdio.h>
-#include<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "energy_func.h"
 #include "pfunc.h"
+#include "fftbor.h"
 #include "mfe.h"
 #include "tpfunc.h"
 #include "tmfe.h"
@@ -19,6 +20,7 @@
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include <iostream>
 
 /* Ivan Dotu
    Implementation of Partition Function calculation
@@ -135,7 +137,7 @@ int main(int argc, char *argv[]){
       else { //if(!strcmp(argv[i],"s")) - error usage
         printf("Error: Usage: %s -m MODE -s SEQUENCE\n",argv[0]);
         printf("Options:\n");
-        printf("-m : 0 (RNAeval), 1(Partition Functon), 2(MFE) 3(Sampling) 4(BP probability) 5(RNAeval and MFE)\n");
+        printf("-m : 0 (RNAeval), 1(Partition Functon), 2(MFE) 3(Sampling) 4(BP probability) 5(RNAeval and MFE), 6(FFTbor)\n");
         printf("-tr: 1(Yes), 0(No): the default is 0\n");
         printf("-ss: secondary structure(needed for RNAeval)\n");
         printf("-t: temperature in C (int)\n");
@@ -252,13 +254,23 @@ int main(int argc, char *argv[]){
            }
            break;
            case 5:// RNAeval and MFE
-            if (dflag == 1){
-               DEBUG = 0;
-             }
-             GetMFE(integer_seq,len,mfe_seq);
-             DEBUG = dflag;
-             printf("\nEval Output\n\n");
-             printf("%f\n",GetStructureEnergy(integer_seq,mfe_seq,triplet,cdflag,tmmflag));
+             if (dflag == 1){
+                DEBUG = 0;
+              }
+              GetMFE(integer_seq,len,mfe_seq);
+              DEBUG = dflag;
+              printf("\nEval Output\n\n");
+              printf("%f\n",GetStructureEnergy(integer_seq,mfe_seq,triplet,cdflag,tmmflag));
+              break;
+          case 6:
+          // FFTbor
+          std::cout << "sequence" << std::endl;
+          for (i = 0; i < strlen(sequence); ++i) {
+            std::cout << i << ": " << sequence[i] << std::endl;
+          }
+            
+            // secstr, integer_seq, sequence, len
+          break;
         }// switch mode   
    } 
 
@@ -269,9 +281,9 @@ int main(int argc, char *argv[]){
   } else{// if (argc>=4); need atleast 4 arguments
         printf("Error: Usage: %s -m MODE -s SEQUENCE\n",argv[0]);
         printf("Options:\n");
-        printf("-m : 0 (RNAeval), 1(Partition Functon), 2(MFE) 3(Sampling) 4(BP probability) 5(RNAeval and MFE)\n");
+        printf("-m : 0 (RNAeval), 1(Partition Functon), 2(MFE) 3(Sampling) 4(BP probability) 5(RNAeval and MFE), 6(FFTbor)\n");
         printf("-tr: 1(Yes), 0(No): the default is 0\n");
-        printf("-ss: secondary structure(needed for RNAeval)\n");
+        printf("-ss: secondary structure(needed for RNAeval, FFTbor)\n");
         printf("-t: temperature in C (int)\n");
         printf("-ns: number of samples\n");
         printf("-p: bp probability method 1,2,3\n");
