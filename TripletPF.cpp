@@ -136,7 +136,7 @@ int main(int argc, char *argv[]){
         printf("Error: Usage: %s -m MODE -s SEQUENCE\n",argv[0]);
         printf("Options:\n");
         printf("-m : 0 (RNAeval), 1(Partition Functon), 2(MFE) 3(Sampling) 4(BP probability) 5(RNAeval and MFE)\n");
-        printf("-tr: 0(Yes), 1(No): the default is 0\n");
+        printf("-tr: 1(Yes), 0(No): the default is 0\n");
         printf("-ss: secondary structure(needed for RNAeval)\n");
         printf("-t: temperature in C (int)\n");
         printf("-ns: number of samples\n");
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]){
         printf("Error: Usage: %s -m MODE -s SEQUENCE\n",argv[0]);
         printf("Options:\n");
         printf("-m : 0 (RNAeval), 1(Partition Functon), 2(MFE) 3(Sampling) 4(BP probability) 5(RNAeval and MFE)\n");
-        printf("-tr: 0(Yes), 1(No): the default is 0\n");
+        printf("-tr: 1(Yes), 0(No): the default is 0\n");
         printf("-ss: secondary structure(needed for RNAeval)\n");
         printf("-t: temperature in C (int)\n");
         printf("-ns: number of samples\n");

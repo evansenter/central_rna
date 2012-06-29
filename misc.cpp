@@ -30,6 +30,7 @@ int cbp[29] = {1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 int guau[29] = {1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 // function takes sequence and converts to integer array through dictionary G->1, A->3, C->7, U->12
+// 1-indexed.
 int * TransformSeq(char * sequence)
 {
   int * integer_seq;
@@ -171,6 +172,7 @@ double **Allocate2DMatrixDouble(int a, int b){
   return Matrix;
 }
 
+// 1-indexed.
 int **BPBetweenBool(int** Matrix, int * bp, int len){
 
   int pos,t,x,i,j,k,l,i_index,k_index;
@@ -216,6 +218,7 @@ int **BPBetweenBool(int** Matrix, int * bp, int len){
   return Matrix;
 }
 
+// 1-indexed.
 int * GetBPList(char * str, int len){
 
   int i = 0;
