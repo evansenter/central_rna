@@ -218,7 +218,7 @@ int **BPBetweenBool(int** Matrix, int * bp, int len){
   return Matrix;
 }
 
-// 1-indexed.
+// 1-indexed, so the length passed in needs to be sequence length + 1.
 int * GetBPList(char * str, int len){
 
   int i = 0;

@@ -1,417 +1,296 @@
-// #include<stdio.h>
-// #include<string.h>
-// #include<stdlib.h>
-// #include"energy_par.h"
-// #include"energy_func.h"
-// #include"tpfunc.h"
-// #include <math.h>
-//  
-// //minimum unpaired nts in a loop
-// #define SIGMA 3
-// #define MIN(x,y) ((x)<=(y) ? (x) : (y) )
-// #define MAX(x,y) ((x)>(y)  ? (x) : (y) )
-// 
-// double calculateZBpfns(int *seq_int, int i, int j, double **ZB, double **ZM, double **ZM1, int n){
-//   if(j-i<=SIGMA)
-//     return 0;
-// 
-//   double RT = R*T;
-//   int k,l,r,k1,k2,x,y;
-//   int ij_index = d1[GetIndex(seq_int[i],seq_int[j])];
-//   double PIns = 0;
-//   double PIpf = 0;
-//   double z0ns = 0;
-//   double z0pf = 0;
-//   double zns = 0;
-//   double zpf = 0;
-//   double zpf1;
-//   int assymetry;
-//   int i0,j0,i1,j1,b,b0,ok;
-//   int ij0_index, ij1_index, ijb_index;
-//   int kj_index, ik_index, lr_index, xy_index;
-// 
-//   if (i+2+SIGMA+1<=j-2){ 
-//     //condition on i,j for there to be possible internal loop
-//     /*-------------------------------------------
-//      Here we consider 2,3,4 loops; i.e. k1xk2 loops where
-//      1<=k1,k2<=3 and k1+k2 in [2,3,4]. Concretely this means all
-//      2 loops (1x1), 3 loops (1x2,2x1), 4 loops (1x3,2x2,3x1).
-//     -------------------------------------------*/
-//     for (k1=1;k1<=3;k1++)
-//       for (k2=1;k2<=3;k2++)
-//         if (k1+k2==2 || k1+k2==3 || k1+k2==4){
-//           x=i+k1+1; y=j-k2-1;
-//           xy_index = d1[GetIndex(seq_int[x],seq_int[y])];
-//           if (x+SIGMA+1<=y && cbp[xy_index]){ 
-//             z0ns += ZB[y][x];
-//             z0pf += ZB[x][y]*exp(-cbp[ij_index]*GetILEnergy(i,j,x,y,seq_int)/RT);
-//             if((i==1)&&(j==15))
-//               printf("IL(1,15,%d,%d) = %f * %f = %f\n",x,y,ZB[x][y],exp(-cbp[ij_index]*GetILEnergy(i,j,x,y,seq_int)/RT),ZB[x][y]*exp(-cbp[ij_index]*GetILEnergy(i,j,x,y,seq_int)/RT));
-//           }
-//         }
-//     PIpf += z0pf;
-//     PIns += z0ns; 
-//     //ZB[i][j] now contains contributions from all 2,3,4 loops
-//     //closed by (i,j).
-//     /*-------------------------------------------
-//       Now we add to ZB[i][j] the contributions from all
-//       k loops, where k=5,6. We then have a for loop with loop
-//       control variable b, where we (1) extend, (2) introduce
-//       1xb0 and b0x1 loops, where 1+b0=k+2*b. 
-// 
-//       Problem is that there are different assymetries for 5,6 loops.
-//       2x3,3x2: k=5, assymetry=1
-//       1x4,4x1: k=5, assymetry=3
-//       3x3:     k=6, assymetry=0
-//       2x4,4x2: k=6, assymetry=2
-//       1x5,5x1: k=6, assymetry=4
-//       A subtle point is that we want to add 1xb0 and b0x1 loops,
-//       where 1+b0=k+2b only ONCE for each value of k. Thus we will
-//       consider 1xb0 and b0x1 loops ONLY for the values
-//       assymetry=0  k=6
-//       assymetry=1  k=5 
-// 
-//       Structure of following loop is approximately:
-//       for assymetry = 0 to 4
-//         for k1 = 1 to 5
-//           for k2 = 1 to 5
-//             k = k1+k2
-//               if abs(k1-k2)==assymetry
-//                 x=i+k1+1; y=j-k2-1
-//                   for b = 1 to min(i-1,N-j)
-//                     b0 = k+2b-1
-//                     extend by b closed by (i-b,j+b)
-//                     if (assymetry=0 and k=6 or assymetry=1 and k=5)
-//                       create 1xb0 and b0x1 loops closed by (i-b,j+b)
-//           Code now follows.
-//           -------------------------------------------*/
-//     for (assymetry=0;assymetry<=4;assymetry++){
-//       zns = 0; //reinitialization for new value of assymetry 
-//       zpf = 0;
-//       for (k1=1;k1<=5;k1++)
-//         for (k2=1;k2<=5;k2++){
-//           ok = (assymetry==0&&k1==3&&k2==3);
-//           ok+= (assymetry==1&&(k1==2&&k2==3 ||k1==3&&k2==2));
-//           ok+= (assymetry==2&&(k1==2&&k2==4 ||k1==4&&k2==2));
-//           ok+= (assymetry==3&&(k1==1&&k2==4 ||k1==4&&k2==1));
-//           ok+= (assymetry==4&&(k1==1&&k2==5 ||k1==5&&k2==1));
-//           if ( ok ){
-//             k=k1+k2;
-//             x=i+k1+1; y=j-k2-1;
-//             xy_index = d1[GetIndex(seq_int[x],seq_int[y])];
-//             if (x+SIGMA+1<=y && cbp[xy_index]){
-//               zns = ZB[y][x];
-//               zpf = ZB[x][y]*exp(-cbp[ij_index]*GetILEnergy(i,j,x,y,seq_int)/RT);
-//               if((i==1)&&(j==15))
-//                 printf("IL(1,15,%d,%d) = %f * %f = %f\n",x,y,ZB[x][y],exp(-cbp[ij_index]*GetILEnergy(i,j,x,y,seq_int)/RT),zpf);
-//            
-//               PIns += zns;
-//               PIpf += zpf;
-//            }      
-//         for (b=1;b<=MIN(i-1,n-j);b++) {
-//         /*-------------------------------------------------------
-//            It is ESSENTIAL that one NOT test for basePair(i-b,j+b,a)
-//            since such "bogus" computations must be performed for the
-//            extension phase.
-//            first term -- unnecessary when counting structures,
-//            but added here for clarity
-//          -------------------------------------------------------*/
-//         i0 = i-(b-1); j0 = j+(b-1);
-//         //last "rung" in ladder descending (i,j)
-//         i1 = i-b ; j1 = j+b ; //next "rung" in ladder descending (i,j)
-//         //next "rung" in ladder descending (i,j) at i0-1, j0+1 
-//         ij0_index = d1[GetIndex(seq_int[i0],seq_int[j0])];
-//         ij1_index = d1[GetIndex(seq_int[i1],seq_int[j1])];
-//         zpf  = zpf*exp(cbp[ij0_index]*GetTMMEnergy(i0,j0,i0+1,j0-1,seq_int)/RT);  //remove last rung
-//         zpf  = zpf*exp(cbp[ij0_index]*GetILSizeCost(k+2*(b-1))/RT);  //remove last rung
-//         zpf  = zpf*exp(cbp[ij0_index]*guau[ij0_index]*AUGUinternal/RT); //remove last rung
-//         zpf  = zpf*exp(-cbp[ij1_index]*GetTMMEnergy(i1,j1,i1+1,j1-1,seq_int)/RT); //add new rung
-//         zpf  = zpf*exp(-cbp[ij1_index]*GetILSizeCost(k+2*b)/RT); //add new rung
-//         zpf  = zpf*exp(-cbp[ij1_index]*guau[ij1_index]*AUGUinternal/RT);
-//         //since assymetry is fixed, don't need to account for this
-//         if((i1==1)&&(j1==15))
-//               printf("from (%d,%d) -- IL(1,15,%d,%d) = %f\n",i,j,x,y,zpf);
-//         b0 = k+2*b-1; //size of left/right portion of 1xb0,b0x1 loop
-//         /*-------------------------------------------------------
-//           second term: (i-b,j+b;x,y) is 1xb0 loop, where 1+b0=k+2*b 
-//             only computed when (assymetry=0 and k=6) or when
-//             (assymetry=1 and k=5)
-//         -------------------------------------------------------*/
-//         x  = (i-b)+1+1; y = (j+b)-b0-1;
-//         ok = (x+SIGMA+1<=y);
-//         xy_index = d1[GetIndex(seq_int[x],seq_int[y])];
-//         ok*= (cbp[xy_index]);
-//         ok*= (assymetry==0&&k==6||assymetry==1&&k==5);
-//         /*-------------------------------------------------------
-//           WARNING:do NOT test for (basePair(i-b,j+b,a) && basePair(x,y,a))
-//          -------------------------------------------------------*/
-//         if (ok){
-//           ZB[j1][i1] += ZB[y][x];
-//           ZB[i1][j1] += ZB[x][y]*exp(-cbp[ij1_index]*GetILEnergy(i-b,j+b,x,y,seq_int)/RT);
-//           if((i1==1)&&(j1==15))
-//               printf("from (%d,%d) -- IL(1,15,%d,%d) = %f * %f = %f\n",i,j,x,y,ZB[x][y],exp(-cbp[ij1_index]*GetILEnergy(i-b,j+b,x,y,seq_int)/RT),ZB[x][y]*exp(-cbp[ij1_index]*GetILEnergy(i-b,j+b,x,y,seq_int)/RT));
-//         }
-//         /*-------------------------------------------------------
-//          third term: (i-b,j+b;x,y) is b0x1 loop, where 1+b0=k+2*b 
-//          only computed when (assymetry=0 and k=6) or when
-//          (assymetry=1 and k=5)
-//         -------------------------------------------------------*/
-//         x  = (i-b)+b0+1; y = (j+b)-1-1;
-//         ok = (x+SIGMA+1<=y);
-//         xy_index = d1[GetIndex(seq_int[x],seq_int[y])];
-//         ok*= (cbp[xy_index]);
-//         ok*= (assymetry==0&&k==6||assymetry==1&&k==5);
-//         /*-------------------------------------------------------
-//          WARNING:do NOT test for (basePair(i-b,j+b,a) && basePair(x,y,a))
-//         -------------------------------------------------------*/
-//         if (ok){
-//           ZB[j1][i1] += ZB[y][x];
-//           ZB[i1][j1] += ZB[x][y]*exp(-cbp[ij1_index]*GetILEnergy(i-b,j+b,x,y,seq_int)/RT);
-//           if((i1==1)&&(j1==15))
-//               printf("from (%d,%d) -- IL(1,15,%d,%d) = %f * %f = %f\n",i,j,x,y,ZB[x][y],exp(-cbp[ij1_index]*GetILEnergy(i-b,j+b,x,y,seq_int)/RT),ZB[x][y]*exp(-cbp[ij1_index]*GetILEnergy(i-b,j+b,x,y,seq_int)/RT));
-//         }
-//         //if(cbp[ij1_index]){
-//         ZB[j+b][i-b] += zns;
-//         ZB[i-b][j+b] += zpf;
-//         //}
-//       }// end of for loop with loop control variable b 
-//             
-//           }
-//         }//end of for k1,k2 loop
-//     }// end of for loop over assymetry values
-//   }
-// 
-//   if(cbp[ij_index]==0){
-//     ZB[i][j] += PIpf; 
-//     return PIns;
-//   }
-//   
-// 
-//   ij_index = d1[GetIndex(seq_int[i+1],seq_int[j-1])];
-//   double PSns = cbp[ij_index]*ZB[j-1][i+1];
-//   double PSpf = cbp[ij_index]*ZB[i+1][j-1]*exp(-1*((GetStackEnergy(i,j,i+1,j-1,seq_int))/RT));
-//   
-//   double PHns = 1;
-//   double PHpf = exp(-1*(GetHairpinEnergy(i,j,seq_int)/RT));
-// 
-//   kj_index =  d1[GetIndex(seq_int[i+2],seq_int[j-1])];
-//   double PLBns = cbp[kj_index]*ZB[j-1][i+2];
-//   double PLBpf = cbp[kj_index]*ZB[i+2][j-1]*exp(-1*((GetStackEnergy(i,j,i+2,j-1,seq_int) + GetLeftBulgeEnergy(i,j,i+2,seq_int))/RT));
-// 
-//   for(k = i+3; (k <= j-SIGMA-2); k++){
-//     kj_index = d1[GetIndex(seq_int[k],seq_int[j-1])];
-//     PLBns += cbp[kj_index]*ZB[j-1][k];
-//     PLBpf += cbp[kj_index]*ZB[k][j-1]*exp(-1*(GetLeftBulgeEnergy(i,j,k,seq_int)/RT));
-//   }
-// 
-//   ik_index = d1[GetIndex(seq_int[i+1],seq_int[j-2])];
-//   double PRBns = cbp[ik_index]*ZB[j-2][i+1];
-//   double PRBpf = cbp[ik_index]*ZB[i+1][j-2]*exp(-1*((GetStackEnergy(i,j,i+1,j-2,seq_int) + GetRightBulgeEnergy(i,j,j-2,seq_int))/RT));
-//   for(k = j-3; (k>=i+SIGMA+2); k--){
-//     ik_index = d1[GetIndex(seq_int[i+1],seq_int[k])];
-//     PRBns += cbp[ik_index]*ZB[k][i+1];
-//     PRBpf += cbp[ik_index]*ZB[i+1][k]*exp(-1*(GetRightBulgeEnergy(i,j,k,seq_int)/RT));
-//   }
-// 
-//   /*double PIns = 0;
-//   double PIpf = 0;
-//   for(l = i+2; (l <= j-SIGMA-3)&&(l-i-2<=30); l++){
-//     for(r = j -2; (r>=l+SIGMA+1)&&(j-r+l-i-2<=30); r--){
-//       lr_index = d1[GetIndex(seq_int[l],seq_int[r])];
-//       PIns += cbp[lr_index]*ZB[r][l];
-//       PIpf += cbp[lr_index]*ZB[l][r]*exp(-1*(GetILEnergy(i,j,l,r,seq_int)/RT));
-//     }
-//   }*/
-// 
-//   double PMns = 0;//ZM1[j-2][i+2];
-//   double PMpf = 0;//ZM1[i+2][j-2];
-//   for(k = i+SIGMA+3; k <= j-SIGMA-2; k++){
-//     PMns += ZM[k-1][i+1]*ZM1[j-1][k];
-//     PMpf += ZM[i+1][k-1]*ZM1[k][j-1];
-//   }
-//   PMpf = PMpf*exp(-1*((MultiloopA+2*MultiloopB)/RT));
-// 
-// 
-//   ZB[i][j] += PSpf + PHpf + PLBpf + PRBpf + PIpf + PMpf;
-//   return (PSns+PHns+PLBns+PRBns+PIns+PMns);
-// }
-// 
-// double calculateZM1pfns(int *seq_int, int i, int j, double **ZB, double **ZM1){
-//   if(j-i<=SIGMA)
-//     return 0;
-//   int k, ik_index;
-// 
-//   double ZM1ns = 0;
-//   double ZM1pf = 0;
-//   double RT = R*T;
-// 
-//   for(k = i+SIGMA+1; k <= j; k++){
-//     ik_index = d1[GetIndex(seq_int[i],seq_int[k])];
-//     ZM1ns += cbp[ik_index]*ZB[k][i];
-//     ZM1pf += cbp[ik_index]*ZB[i][k]*exp(-1*((MultiloopC*(j-k))/RT)); 
-//   }
-// 
-//   ZM1[i][j] = ZM1pf;
-//   return ZM1ns;
-// }
-// 
-// double calculateZMpfns(int *seq_int, int i, int j, double **ZM1, double **ZM){
-//   if((i<=j)&&(j-i<=SIGMA))
-//     return 0;
-//   
-//   int k;
-//   double ZMns = 0;
-//   double ZMpf = 0;
-//   double RT = R*T;
-// 
-//   for(k = i; k <= j-SIGMA-2; k++){
-//     ZMns += ZM1[j][k] + ZM[k][i]*ZM1[j][k+1];
-//     ZMpf += ZM1[k][j]*exp(-1*((MultiloopB+MultiloopC*(k-i))/RT)) + ZM[i][k]*ZM1[k+1][j]*exp(-1*(MultiloopB/RT));
-//   }
-//   ZMns += ZM1[j][j-SIGMA-1];
-//   ZMpf += ZM1[j-SIGMA-1][j]*exp(-1*((MultiloopB+MultiloopC*(j-SIGMA-1-i))/RT));
-// 
-//   ZM[i][j] = ZMpf;
-// 
-//   return ZMns;
-// }
-// 
-// double calculateZpfns(int *seq_int, int i, int j, double **ZB, double **Z){
-//   if(j-i<=SIGMA)
-//     return 1;
-// 
-//   int ij_index = d1[GetIndex(seq_int[i],seq_int[j])];
-//   /*if(cbp[ij_index]==1)
-//     return 2;
-//   */
-// 
-//   int k, kj_index;
-//   double Zns = Z[j-1][i] + (cbp[ij_index])*ZB[j][i];
-//   double Zpf = Z[i][j-1] + (cbp[ij_index])*ZB[i][j];
-//   for(k = i+1; k <= j-SIGMA-1; k++){
-//     kj_index = d1[GetIndex(seq_int[k],seq_int[j])];
-//     Zns += cbp[kj_index]*Z[k-1][i]*ZB[j][k];
-//     Zpf += cbp[kj_index]*Z[i][k-1]*ZB[k][j];
-//   }
-// 
-//   Z[i][j] = Zpf;
-//  
-//   return Zns;
-// }
-// 
-// 
-// double GetPartFunc(int *seq_int, int n){
-//   
-//   double **Z;
-//   double **ZB;
-//   double **ZM;
-//   double **ZM1;
-//   double Z1n,Zn1;
-//   int i,j,d;
-// 
-// 
-//   //Allocate MAtrices
-//   Z = (double**)malloc((n+1)*sizeof(double*));
-//   ZB = (double**)malloc((n+1)*sizeof(double*));
-//   ZM = (double**)malloc((n+1)*sizeof(double*));
-//   ZM1 = (double**)malloc((n+1)*sizeof(double*));
-//   for(i=0;i<n+1;i++){
-//     Z[i] = (double*) calloc(n+1,sizeof(double));
-//     ZB[i] = (double*) calloc(n+1,sizeof(double));
-//     ZM[i] = (double*) calloc(n+1,sizeof(double));
-//     ZM1[i] = (double*) calloc(n+1,sizeof(double));
-//   }
-// 
-//   //Initialize Z
-//   for(d=0;d<=SIGMA;d++)
-//     for(i=1;i<=n-d;i++){
-//       j=i+d;
-//       Z[i][j] = 1;
-//       Z[j][i] = 1;
-//     }
-// 
-//   //Start Recursions
-//   for (d = SIGMA+1; d <= n; d++){
-//     for(i=1; (i+d<=n); i++){
-//       j=i+d;
-//       
-//       ZB[j][i] += calculateZBpfns(seq_int,i,j,ZB,ZM,ZM1,n);
-// 
-//       ZM1[j][i] = calculateZM1pfns(seq_int,i,j,ZB,ZM1);
-// 
-//       ZM[j][i] = calculateZMpfns(seq_int,i,j,ZM1,ZM);
-//    
-//       Z[j][i] = calculateZpfns(seq_int,i,j,ZB,Z);
-//     }
-//   }
-// 
-//   //Save results  
-//   Z1n = Z[1][n];//partition function
-//   Zn1 = Z[n][1];//number of structures
-// 
-//   /* printf("ZBBL:\n");
-//   for(i=1;i<=n;i++){
-//     for(j=1;j<=n;j++)
-//       printf("%f ",ZBBL[i][j]);
-//     printf("\n");
-//   }
-// 
-//    printf("ZBBR:\n");
-//   for(i=1;i<=n;i++){
-//     for(j=1;j<=n;j++)
-//       printf("%f ",ZBBR[i][j]);
-//     printf("\n");
-//   }
-// 
-//   printf("ZBB:\n");
-//   for(i=1;i<=n;i++){
-//     for(j=1;j<=n;j++)
-//       printf("%f ",ZBB[i][j]);
-//     printf("\n");
-//   }
-//   */
-// 
-//   /*printf("ZB:\n");
-//   for(i=1;i<=n;i++){
-//     for(j=1;j<=n;j++)
-//       printf("%f ",ZB[i][j]);
-//     printf("\n");
-//   }
-// 
-//   printf("ZM1:\n");
-//   for(i=1;i<=n;i++){
-//     for(j=1;j<=n;j++)
-//       printf("%f ",ZM1[i][j]);
-//     printf("\n");
-//   }
-//   
-//   printf("ZM:\n");
-//   for(i=1;i<=n;i++){
-//     for(j=1;j<=n;j++)
-//       printf("%f ",ZM[i][j]);
-//     printf("\n");
-//   }
-// 
-//   printf("Z:\n");
-//   for(i=1;i<=n;i++){
-//     for(j=1;j<=n;j++)
-//       printf("%f ",Z[i][j]);
-//     printf("\n");
-//   }*/
-// 
-//   //Free Matrices
-//   for(i=0; i<n+1; i++){
-//     free(Z[i]);
-//     free(ZB[i]);
-//     free(ZM[i]);
-//     free(ZM1[i]);
-//   }
-//   free(Z);
-//   free(ZB);
-//   free(ZM);
-//   free(ZM1);
-// 
-//   printf("Number of Structures: %f\n",Zn1);
-// 
-//   return Z1n;
-// }
+#include "fftbor.h"
+#include "misc.h"
+#include <stdio.h>
+#include <iostream>
+#include <fftw3.h>
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
+#define MIN_PAIR_DIST 3
+#define MAX_INTERIOR_DIST 30
+#define ZERO_C dcomplex(0.0, 0.0)
+#define ONE_C dcomplex(1.0, 0.0)
+#define PRECISION 4
+#define FFTW_REAL 0
+#define FFTW_IMAG 1
+#define STRUCTURE_COUNT 1
+#define FFTBOR_DEBUG 1
+#define WORKING_COUNTER 1
+
+extern int DEBUG;
+
+void FFTbor(int *intSequence, char *structure, int length, double temperature) {
+  // Variable declarations.
+  int i, j, d, k, l, delta, root;
+  int *basePairs, **bpCount;
+  double RT, energy, scalingFactor;
+  dcomplex x;
+  
+  dcomplex **Z            = new dcomplex*[length + 1];
+  dcomplex **ZB           = new dcomplex*[length + 1];
+  dcomplex **ZM           = new dcomplex*[length + 1];
+  dcomplex **rootsOfUnity = new dcomplex*[length + 1];
+  double    *coefficients = new double[length + 1];
+  
+  RT        = 0.0019872370936902486 * (temperature + 273.15) * 100; // 0.01 * (kcal K)/mol
+  basePairs = GetBPList(structure, length + 1);
+  bpCount   = numBasePairs(basePairs, length);
+  
+  // Matrix allocation.
+  for (i = 0; i <= length; ++i) {
+    Z[i]               = new dcomplex[length + 1];
+    ZB[i]              = new dcomplex[length + 1];
+    ZM[i]              = new dcomplex[length + 1];
+    rootsOfUnity[i]    = new dcomplex[2];
+    rootsOfUnity[i][0] = dcomplex(cos(2 * M_PI * i / (length + 1)), sin(2 * M_PI * i / (length + 1)));
+  }
+  
+  // Start main recursions (root <= round(length / 2.0) is an optimization for roots of unity).
+  for (root = 0; root <= round(length / 2.0); ++root) {
+    // Flush the matrices.
+    for (i = 0; i <= length; ++i) {
+      for (j = 0; j <= length; ++j) {
+        if (i > 0 && j > 0 && abs(j - i) <= MIN_PAIR_DIST) {
+       Z[i][j] = ONE_C;
+     } else {
+       Z[i][j] = ZERO_C;
+     }
+     
+        ZB[i][j] = ZERO_C;
+        ZM[i][j] = ZERO_C;
+      }
+    }
+    
+    x = rootsOfUnity[root][0];
+    
+    // ****************************************************************************
+    // Main recursions
+    // ****************************************************************************
+    for (d = MIN_PAIR_DIST + 1; d < length; ++d) {
+      for (i = 1; i <= length - d; ++i) {
+        j = i + d;
+      
+        if (canPair(intSequence[i], intSequence[j])) {
+          // ****************************************************************************
+          // Solve ZB 
+          // ****************************************************************************
+          // In a hairpin, [i + 1, j - 1] unpaired.
+          energy    = 0;// hairpinloop(i, j, PN[seq[i]][seq[j]], seq, a);
+          delta     = bpCount[i][j] + jPairedTo(i, j, basePairs);
+          ZB[i][j] += pow(x, delta) * exp(-energy / RT);
+  
+          if (STRUCTURE_COUNT) {
+            ZB[j][i] += 1;
+          }
+  
+          // Interior loop / bulge / stack / multiloop.
+          for (k = i + 1; k < j - MIN_PAIR_DIST; ++k) {
+            for (l = MAX(k + MIN_PAIR_DIST + 1, j - MAX_INTERIOR_DIST - 1); l < j; ++l) {
+              if (canPair(intSequence[k], intSequence[l])) {
+                 // In interior loop / bulge / stack with (i, j) and (k, l), (i + 1, k - 1) and (l + 1, j - 1) are all unpaired.
+                 energy    = 0;// interiorloop(i, j, k, l, PN[seq[i]][seq[j]], PN[seq[l]][seq[k]], seq);
+                 delta     = bpCount[i][j] - bpCount[k][l] + jPairedTo(i, j, basePairs);
+                 ZB[i][j] += (ZB[k][l] * pow(x, delta) * exp(-energy / RT));
+  
+                 if (STRUCTURE_COUNT) {
+                   ZB[j][i] += ZB[l][k];
+                 }
+  
+                if (k > i + MIN_PAIR_DIST + 2) {
+                  // If (i, j) is the closing b.p. of a multiloop, and (k, l) is the rightmost base pair, there is at least one hairpin between (i + 1, k - 1).
+                  energy    = 0;// multiloop_closing(i, j, k, l, PN[seq[j]][seq[i]], PN[seq[k]][seq[l]], seq);
+                  delta     = bpCount[i][j] - bpCount[i + 1][k - 1] - bpCount[k][l] + jPairedTo(i, j, basePairs);
+                  ZB[i][j] += ZM[i + 1][k - 1] * ZB[k][l] * pow(x, delta) * exp(-energy / RT);
+  
+                  if (STRUCTURE_COUNT) {
+                    ZB[j][i] += ZM[k - 1][i + 1] * ZB[l][k];
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        // ****************************************************************************
+        // Solve ZM
+        // ****************************************************************************
+        energy    = 0;// P->MLbase;
+        delta     = jPairedIn(i, j, basePairs);
+        ZM[i][j] += ZM[i][j - 1] * pow(x, delta) * exp(-energy / RT);
+  
+        if (STRUCTURE_COUNT) {
+          ZM[j][i] += ZM[j - 1][i];
+        }
+  
+        for (k = i; k < j - MIN_PAIR_DIST; ++k) {
+          if (canPair(intSequence[k], intSequence[j])) {
+            // Only one stem.
+            energy    = 0;// P->MLintern[PN[seq[k]][seq[j]]] + P->MLbase * (k - i);
+            delta     = bpCount[i][j] - bpCount[k][j];
+            ZM[i][j] += ZB[k][j] * pow(x, delta) * exp(-energy / RT);
+  
+            if (STRUCTURE_COUNT) {
+              ZM[j][i] += ZB[j][k];
+            }
+  
+            // More than one stem.
+            if (k > i + MIN_PAIR_DIST + 2) {
+              energy    = 0;// P->MLintern[PN[seq[k]][seq[j]]];
+              delta     = bpCount[i][j] - bpCount[i][k - 1] - bpCount[k][j];
+              ZM[i][j] += ZM[i][k - 1] * ZB[k][j] * pow(x, delta) * exp(-energy / RT);
+  
+              if (STRUCTURE_COUNT) {
+                ZM[j][i] += ZM[k - 1][i] * ZB[j][k];
+              }
+            }
+          }
+        }
+        
+        // **************************************************************************
+        // Solve Z
+        // **************************************************************************
+        delta    = jPairedIn(i, j, basePairs);
+        Z[i][j] += Z[i][j - 1] * pow(x, delta);
+  
+        if (STRUCTURE_COUNT) {
+          Z[j][i] += Z[j - 1][i];
+        }
+  
+        for (k = i; k < j - MIN_PAIR_DIST; ++k) { 
+          // (k, j) is the rightmost base pair in (i, j).
+          if (canPair(intSequence[k], intSequence[j])) {
+            energy = 0;// PN[seq[k]][seq[j]] > 2 ? TerminalAU : 0;
+            
+            if (k == i) {
+              delta    = bpCount[i][j] - bpCount[k][j];
+              Z[i][j] += ZB[k][j] * pow(x, delta) * exp(-energy / RT);
+  
+              if (STRUCTURE_COUNT) {
+                Z[j][i] += ZB[j][k];
+              }
+            } else {
+              delta    = bpCount[i][j] - bpCount[i][k - 1] - bpCount[k][j];
+              Z[i][j] += Z[i][k - 1] * ZB[k][j] * pow(x, delta) * exp(-energy / RT);
+  
+              if (STRUCTURE_COUNT) {
+                Z[j][i] += Z[k - 1][i] * ZB[j][k];
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    rootsOfUnity[root][1] = Z[1][length];
+    
+    if (!root) {
+      scalingFactor = Z[1][length].real();
+    }
+  
+    if (WORKING_COUNTER) {
+      std::cout << "." << std::flush;
+    }
+  }
+  
+  if (WORKING_COUNTER) {
+    printf("\n");
+  }
+  
+  // Optimization leveraging complementarity of roots of unity.
+  if (length % 2) {
+    i = root - 2;
+  } else {
+    i = root - 1;
+  }
+  
+  for (; root <= length && i > 0; --i, ++root) {
+    rootsOfUnity[root][1] = dcomplex(rootsOfUnity[i][1].real(), -rootsOfUnity[i][1].imag());
+  }
+  
+  printf("Number of structures: %.0f\n", Z[length][1].real());
+  
+  solveSystem(length, rootsOfUnity, coefficients, scalingFactor);
+}
+
+void solveSystem(int length, dcomplex **rootsOfUnity, double *coefficients, double scalingFactor) {
+  int i, j;
+  dcomplex sum = ZERO_C;
+  
+	if (FFTBOR_DEBUG) {
+		std::cout << "START ROOTS AND SOLUTIONS" << std::endl << std::endl;
+		
+		for (i = 0; i <= length; ++i) {
+      for (j = 0; j <= 1; ++j) {
+        printf("%+.15f, %-+25.15f", rootsOfUnity[i][j].real(), rootsOfUnity[i][j].imag());
+      }
+      std::cout << std::endl;
+    }
+    
+	  std::cout << "END ROOTS AND SOLUTIONS" << std::endl << std::endl;
+	}
+
+  fftw_complex signal[length + 1];
+  fftw_complex result[length + 1];
+  
+  for (i = 0; i <= length; i++) {
+    signal[i][FFTW_REAL] = (pow(10, PRECISION) * rootsOfUnity[i][1].real()) / scalingFactor;
+    signal[i][FFTW_IMAG] = (pow(10, PRECISION) * rootsOfUnity[i][1].imag()) / scalingFactor;
+  }
+  
+  fftw_plan plan = fftw_plan_dft_1d(length + 1, signal, result, FFTW_FORWARD, FFTW_ESTIMATE);
+  fftw_execute(plan);
+  fftw_destroy_plan(plan);
+  
+  for (i = 0; i <= length; i++) {
+    coefficients[i] = PRECISION == 0 ? result[i][FFTW_REAL] / (length + 1) : pow(10.0, -PRECISION) * static_cast<int>(result[i][FFTW_REAL] / (length + 1));
+    sum            += coefficients[i];
+    
+    std::cout << i << "\t" << coefficients[i] << std::endl;
+  }
+  
+	printf("Scaling factor (Z{1, n}): %.15f\n", scalingFactor);
+  std::cout << "Sum: " << sum << std::endl;
+}
+
+int canPair(int a, int b) {
+  // Takes the integer representation of two nucleotides.
+  if (DEBUG) {
+    if (!((a == 1 || a == 3 || a == 7 || a == 12) && (b == 1 || b == 3 || b == 7 || b == 12))) {
+      printf("WARNING: calling canPair(%d, %d) with arguments that aren't the integer encoding of nucleotides. This is probably an error\n", a, b);
+    }
+  }
+  
+  return d1[GetIndex(a, b)] < 6;
+}
+
+int jPairedTo(int i, int j, int *basePairs) {
+  return basePairs[i] == j ? -1 : 1;
+}
+
+int jPairedIn(int i, int j, int *basePairs) {
+  return basePairs[j] >= i && basePairs[j] < j ? 1 : 0;
+}
+
+int **numBasePairs(int *basePairs, int length) {
+  int d, i, j;
+  
+  int **bpCount = Allocate2Dmatrix(length + 1, length + 1);
+  
+  for (d = MIN_PAIR_DIST + 1; d < length; d++) {
+    for (i = 1; i <= length - d; i++) {
+      j = i + d;
+      bpCount[i][j] = bpBetween(i, j, basePairs);
+    }
+  }
+  
+  return bpCount;
+}
+
+int bpBetween(int i, int j, int *basePairs) {
+  int k, n = 0;
+  for (k = i; k <= j; k++) {
+    if (k < basePairs[k] && basePairs[k] <= j) {
+      n++;
+    }
+  }
+  
+  return n;
+}

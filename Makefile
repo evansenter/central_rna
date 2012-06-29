@@ -28,7 +28,7 @@ tcalculateProbs2.o: tcalculateProbs2.cpp
 pfunc.o: pfunc.cpp
 	$(CC) $(CFLAGS) pfunc.cpp
 
-fftbor.o: fftbor.cpp
+fftbor.o: fftbor.cpp misc.h misc.cpp
 	$(CC) $(CFLAGS) fftbor.cpp
 
 mfe.o: mfe.cpp

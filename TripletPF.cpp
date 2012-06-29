@@ -20,7 +20,6 @@
 #include <string.h>
 #include <sys/resource.h>
 #include <sys/time.h>
-#include <iostream>
 
 /* Ivan Dotu
    Implementation of Partition Function calculation
@@ -264,12 +263,7 @@ int main(int argc, char *argv[]){
               break;
           case 6:
           // FFTbor
-          std::cout << "sequence" << std::endl;
-          for (i = 0; i < strlen(sequence); ++i) {
-            std::cout << i << ": " << sequence[i] << std::endl;
-          }
-            
-            // secstr, integer_seq, sequence, len
+          FFTbor(integer_seq, secstr, len, temp);
           break;
         }// switch mode   
    } 
