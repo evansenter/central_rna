@@ -32,7 +32,6 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
   dcomplex **rootsOfUnity = new dcomplex*[length + 1];
   double    *coefficients = new double[length + 1];
   
-  // RT        = 0.0019872370936902486 * (temperature + 273.15) * 100; // 0.01 * (kcal K)/mol
   RT        = R * T;
   basePairs = GetBPList(structure, length + 1);
   bpCount   = numBasePairs(basePairs, length);
@@ -52,10 +51,10 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
     for (i = 0; i <= length; ++i) {
       for (j = 0; j <= length; ++j) {
         if (i > 0 && j > 0 && abs(j - i) <= MIN_PAIR_DIST) {
-       Z[i][j] = ONE_C;
-     } else {
-       Z[i][j] = ZERO_C;
-     }
+          Z[i][j] = ONE_C;
+        } else {
+          Z[i][j] = ZERO_C;
+        }
      
         ZB[i][j] = ZERO_C;
         ZM[i][j] = ZERO_C;
@@ -100,8 +99,7 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
                 if (k > i + MIN_PAIR_DIST + 2) {
                   // If (i, j) is the closing b.p. of a multiloop, and (k, l) is the rightmost base pair, there is at least one hairpin between (i + 1, k - 1).
                   energy    = MultiloopA + 2 * MultiloopB + MultiloopC * (j - l - 1);
-                  delta     = bpCount[i][j] - bpCount[i + 1][k - 1] - bpCount[k][l] + jPairedTo(i, j, basePairs);
-                  ZB[i][j] += ZM[i + 1][k - 1] * ZB[k][l] * pow(x, delta) * exp(-energy / RT);
+                  ZB[i][j] += ZM[i + 1][k - 1] * ZB[k][l] * pow(x, delta - bpCount[i + 1][k - 1]) * exp(-energy / RT);
   
                   if (STRUCTURE_COUNT) {
                     ZB[j][i] += ZM[k - 1][i + 1] * ZB[l][k];
@@ -115,7 +113,7 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
         // ****************************************************************************
         // Solve ZM
         // ****************************************************************************
-        energy    = 0;// P->MLbase;
+        energy    = MultiloopC;
         delta     = jPairedIn(i, j, basePairs);
         ZM[i][j] += ZM[i][j - 1] * pow(x, delta) * exp(-energy / RT);
   
@@ -138,8 +136,7 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
             if (k > i + MIN_PAIR_DIST + 2) {
               // I believe this needs a MultiloopC penalty as well, but since it's set to 0 it's not a big deal.
               energy    = MultiloopB;
-              delta     = bpCount[i][j] - bpCount[i][k - 1] - bpCount[k][j];
-              ZM[i][j] += ZM[i][k - 1] * ZB[k][j] * pow(x, delta) * exp(-energy / RT);
+              ZM[i][j] += ZM[i][k - 1] * ZB[k][j] * pow(x, delta - bpCount[i][k - 1]) * exp(-energy / RT);
   
               if (STRUCTURE_COUNT) {
                 ZM[j][i] += ZM[k - 1][i] * ZB[j][k];
@@ -163,17 +160,16 @@ void FFTbor(int *intSequence, char *structure, int length, double temperature) {
           if (canPair(intSequence[k], intSequence[j])) {
             // if d1[k, j] == 2 or 3, it's not an AU or GU pair.
             energy = d1[GetIndex(intSequence[k], intSequence[j])] == 2 || d1[GetIndex(intSequence[k], intSequence[j])] == 3 ? 0 : GUAU_penalty;
+            delta  = bpCount[i][j] - bpCount[k][j];
             
             if (k == i) {
-              delta    = bpCount[i][j] - bpCount[k][j];
               Z[i][j] += ZB[k][j] * pow(x, delta) * exp(-energy / RT);
   
               if (STRUCTURE_COUNT) {
                 Z[j][i] += ZB[j][k];
               }
             } else {
-              delta    = bpCount[i][j] - bpCount[i][k - 1] - bpCount[k][j];
-              Z[i][j] += Z[i][k - 1] * ZB[k][j] * pow(x, delta) * exp(-energy / RT);
+              Z[i][j] += Z[i][k - 1] * ZB[k][j] * pow(x, delta - bpCount[i][k - 1]) * exp(-energy / RT);
   
               if (STRUCTURE_COUNT) {
                 Z[j][i] += Z[k - 1][i] * ZB[j][k];
