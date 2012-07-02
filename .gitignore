@@ -1,6 +1,7 @@
 RNAbor
 FFTbor
 TripletPF
+*.ps
 
 # Compiled Object files
 *.slo
