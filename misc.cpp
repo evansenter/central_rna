@@ -9,7 +9,7 @@ extern int DEBUG;
 int d2[13] = {0,13,0,14,0,0,0,15,0,0,0,0,16};
 
 double R = 0.001987;
-double T = 310.00;
+double T = 310.15;
 
 /* 
   d1 breakdown

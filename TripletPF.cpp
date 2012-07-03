@@ -263,7 +263,7 @@ int main(int argc, char *argv[]){
               break;
           case 6:
           // FFTbor
-          FFTbor(integer_seq, secstr, len, temp);
+          FFTbor(integer_seq, secstr, len);
           break;
         }// switch mode   
    } 

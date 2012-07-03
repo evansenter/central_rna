@@ -1259,7 +1259,7 @@ double GetExteriorLoopEnergy(H* Helix, int** children, int * bp, int * trans_seq
       else if(k-j-1 <= 1){// if(coax_flag == 1)
           coax_flag = 1;
           min_coax_energy = CD_flag*GetCoaxEnergy(i,j,k,l,bp,trans_seq);
-          if(index = num_branch-1){
+          if(index == num_branch-1){
             energy+=min_coax_energy;
             coax_flag = 0;
           }
