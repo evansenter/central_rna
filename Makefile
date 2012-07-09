@@ -1,11 +1,12 @@
 CFLAGS  = -Wall -c -O3
 LDFLAGS = -lfftw3
 CC      = g++
+BINDIR  = /usr/local/bin
 
-all: TripletPF
+all: RNAcentral
 
-TripletPF: TripletPF.o tpfunc.o tmfe.o tsampling.o tcalculateProbs1.o tcalculateProbs2.o pfunc.o fftbor.o mfe.o sampling.o calculateProbs1.o calculateProbs2.o energy_func.o energy_par.o enthalpy_par.o misc.o random.o
-	$(CC) TripletPF.o tpfunc.o tmfe.o tsampling.o tcalculateProbs1.o tcalculateProbs2.o pfunc.o fftbor.o mfe.o sampling.o calculateProbs1.o calculateProbs2.o energy_func.o energy_par.o enthalpy_par.o misc.o random.o $(LDFLAGS) -o TripletPF
+RNAcentral: TripletPF.o tpfunc.o tmfe.o tsampling.o tcalculateProbs1.o tcalculateProbs2.o pfunc.o fftbor.o mfe.o sampling.o calculateProbs1.o calculateProbs2.o energy_func.o energy_par.o enthalpy_par.o misc.o random.o
+	$(CC) TripletPF.o tpfunc.o tmfe.o tsampling.o tcalculateProbs1.o tcalculateProbs2.o pfunc.o fftbor.o mfe.o sampling.o calculateProbs1.o calculateProbs2.o energy_func.o energy_par.o enthalpy_par.o misc.o random.o $(LDFLAGS) -o RNAcentral
 
 TripletPF.o: TripletPF.cpp
 	$(CC) $(CFLAGS) TripletPF.cpp
@@ -59,5 +60,7 @@ random.o: random.cpp
 	$(CC) $(CFLAGS) random.cpp
 
 clean:
-	rm -rf *o TripletPF
-# DO NOT DELETE
+	rm -rf *.o RNAcentral 
+
+install:
+	cp RNAcentral $(BINDIR)
